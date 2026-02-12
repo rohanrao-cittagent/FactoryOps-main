@@ -1,0 +1,282 @@
+.floating-header {
+    margin-bottom: 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 900;
+    animation: slideDownFade 0.8s var(--ease-premium);
+}
+
+@keyframes slideDownFade {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.header-pill {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 100px;
+    padding: 0.6rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+}
+
+.header-breadcrumbs {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-breadcrumbs .root {
+    font-weight: 800;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.header-breadcrumbs .separator {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+.header-breadcrumbs .current {
+    font-weight: 800;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+
+.header-center-search {
+    flex: 1;
+    max-width: 440px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 100px;
+    padding: 0.6rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: var(--transition-smooth);
+}
+
+.header-center-search:focus-within {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-secondary);
+    box-shadow: var(--shadow-neon-blue);
+}
+
+.header-center-search input {
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: 100%;
+    color: var(--text-primary);
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.control-icon-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    cursor: pointer;
+    position: relative;
+    transition: var(--transition-smooth);
+}
+
+.control-icon-btn:hover {
+    background: rgba(var(--accent-primary-rgb, 99, 102, 241), 0.1);
+    color: var(--accent-primary);
+    border-color: rgba(var(--accent-primary-rgb, 99, 102, 241), 0.3);
+}
+
+.pill-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--accent-primary);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 900;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #0f172a;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.header-profile-section {
+    padding-left: 1.5rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+}
+
+.profile-trigger {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    padding: 0.4rem 0.6rem;
+    border-radius: 16px;
+}
+
+.profile-trigger:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.profile-text {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.profile-text .name {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.profile-text .role {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.avatar-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.profile-orb {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: var(--transition-smooth);
+}
+
+.avatar-chevron {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    background: var(--accent-primary);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    border: 2px solid #0f172a;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.profile-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 1rem);
+    right: 0;
+    width: 240px;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 0.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    z-index: 1000;
+}
+
+.dropdown-header {
+    padding: 1rem;
+}
+
+.dropdown-header .email {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.08);
+    margin: 0.5rem 0;
+}
+
+.dropdown-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+}
+
+.dropdown-item.logout {
+    color: #ff5555;
+    font-weight: 700;
+}
+
+.dropdown-item.logout:hover {
+    background: rgba(255, 85, 85, 0.15);
+    color: #ff7777;
+}
+
+:root.light .profile-dropdown-menu {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+:root.light .dropdown-item {
+    color: var(--text-primary);
+}
+
+:root.light .dropdown-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}

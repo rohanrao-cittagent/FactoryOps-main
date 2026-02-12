@@ -1,0 +1,106 @@
+.floating-dock {
+    position: fixed;
+    top: 1.5rem;
+    left: 1.5rem;
+    bottom: 1.5rem;
+    background: var(--bg-glass);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 28px;
+
+    display: flex;
+    flex-direction: column;
+    padding: 2rem 1rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    z-index: 1000;
+    overflow: hidden;
+    transition: width 0.6s var(--ease-premium);
+}
+
+.dock-logo {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0 0.75rem;
+    margin-bottom: 3rem;
+}
+
+.logo-orb {
+    min-width: 44px;
+    height: 44px;
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+    color: white;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.logo-text {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    font-size: 1.4rem;
+    color: var(--text-primary);
+    letter-spacing: -0.04em;
+    white-space: nowrap;
+}
+
+.dock-nav {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.dock-link {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 0.8rem 0.75rem;
+    border-radius: 16px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+}
+
+.dock-link:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dock-link.active {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+.link-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    transition: var(--transition-smooth);
+}
+
+.dock-link.active .link-icon {
+    color: var(--accent-secondary);
+    filter: drop-shadow(0 0 8px rgba(14, 165, 233, 0.5));
+    transform: scale(1.1);
+}
+
+.link-label {
+    white-space: nowrap;
+}
+
+.dock-footer {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}

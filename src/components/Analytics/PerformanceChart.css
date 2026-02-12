@@ -1,0 +1,28 @@
+.chart-container {
+    padding: 1rem;
+    border-radius: 16px;
+}
+
+.chart-header {
+    margin-bottom: 1rem;
+}
+
+.chart-header h3 {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+}
+
+.chart-wrapper {
+    margin-top: 1rem;
+}
+
+.recharts-cartesian-axis-line {
+    display: none;
+}
+
+.recharts-tooltip-cursor {
+    stroke: rgba(255, 255, 255, 0.1);
+}

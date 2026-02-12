@@ -1,0 +1,310 @@
+.devices-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    animation: fadeIn 0.8s var(--ease-premium);
+}
+
+.devices-toolbar-premium {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.devices-title-hub h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: var(--text-primary);
+    letter-spacing: -0.04em;
+    margin-bottom: 0.5rem;
+}
+
+.devices-title-hub p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.devices-actions-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    background: var(--bg-surface);
+    backdrop-filter: var(--glass-blur);
+    border: var(--glass-border);
+    border-radius: 20px;
+    padding: 0.75rem 1.5rem;
+}
+
+.toolbar-hub-btns {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+/* Reusing Search Box Premium from Users.css or Global */
+.search-box-premium {
+    flex: 0 1 400px;
+    background: var(--bg-card);
+    border-radius: 100px;
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-secondary);
+    border: var(--glass-card-border);
+    transition: var(--transition-smooth);
+}
+
+
+.search-box-premium:focus-within {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-secondary);
+    box-shadow: var(--shadow-neon-blue);
+    color: var(--text-primary);
+}
+
+.search-box-premium input {
+    background: transparent;
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 600;
+    color: inherit;
+}
+
+/* Health Metrics Overhaul */
+.health-overview-panel {
+    background: var(--bg-glass);
+    backdrop-filter: var(--glass-blur-deep);
+    border: var(--glass-border);
+    border-radius: 20px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-depth);
+}
+
+.health-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.25rem;
+}
+
+.health-stat-card {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    padding: 1.5rem;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: var(--glass-card-border);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.health-stat-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-8px);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.stat-icon-orb {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.25rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.health-stat-card.blue .stat-icon-orb {
+    background: rgba(14, 165, 233, 0.1);
+    color: var(--accent-secondary);
+    border-color: rgba(14, 165, 233, 0.2);
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.1);
+}
+
+.health-stat-card.success .stat-icon-orb {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    border-color: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+}
+
+.health-stat-card.warning .stat-icon-orb {
+    background: rgba(245, 158, 11, 0.1);
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.2);
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);
+}
+
+.health-stat-card.error .stat-icon-orb {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+}
+
+.health-stat-card.neutral .stat-icon-orb {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-dim);
+}
+
+.h-stat-label {
+    font-size: 0.65rem;
+    font-weight: 900;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+.h-stat-value {
+    font-size: 2rem;
+    font-weight: 950;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.05em;
+    background: linear-gradient(180deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.15));
+}
+
+.h-stat-footer {
+    width: 100%;
+    margin-top: auto;
+}
+
+.h-stat-percent-row {
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.h-stat-percent {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+}
+
+.h-stat-progress {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+
+.h-stat-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.h-stat-bar.success {
+    background: linear-gradient(90deg, #10b981, #34d399);
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+}
+
+.h-stat-bar.warning {
+    background: linear-gradient(90deg, #f59e0b, #fbbf24);
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+}
+
+.h-stat-bar.error {
+    background: linear-gradient(90deg, #ef4444, #f87171);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);
+}
+
+.h-stat-bar.neutral {
+    background: var(--text-dim);
+}
+
+.enterprise-devices-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+}
+
+/* Light Mode Refinements */
+:root.light .health-overview-panel {
+    background: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+:root.light .health-stat-card {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+:root.light .health-stat-card:hover {
+    background: white;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+}
+
+:root.light .h-stat-value {
+    background: linear-gradient(180deg, #0f172a 0%, #334155 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    filter: none;
+}
+
+:root.light .stat-icon-orb {
+    background: white;
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+:root.light .health-stat-card.blue .stat-icon-orb {
+    background: rgba(14, 165, 233, 0.1);
+}
+
+:root.light .health-stat-card.success .stat-icon-orb {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+:root.light .health-stat-card.warning .stat-icon-orb {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+:root.light .health-stat-card.error .stat-icon-orb {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+:root.light .h-stat-progress {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 1200px) {
+    .health-stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .devices-actions-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .health-stats-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
