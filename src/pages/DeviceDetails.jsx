@@ -15,7 +15,8 @@ import {
     AlertCircle,
     Shield,
     Play,
-    Pause
+    Pause,
+    Plus
 } from 'lucide-react';
 import PerformanceChart from '../components/Analytics/PerformanceChart';
 import RuleModal from '../components/Rules/RuleModal';
@@ -111,16 +112,33 @@ const DeviceDetails = () => {
         setIsModalOpen(true);
     };
 
+    const handleAddRule = () => {
+        setEditingRule(null);
+        setIsModalOpen(true);
+    };
+
     const handleSaveRule = (updatedRuleData) => {
         const savedRules = localStorage.getItem('factoryops_rules');
-        if (savedRules) {
-            const allRules = JSON.parse(savedRules);
-            const updatedAllRules = allRules.map(r =>
+        const allRules = savedRules ? JSON.parse(savedRules) : [];
+
+        let updatedAllRules;
+        if (editingRule) {
+            // Update existing rule
+            updatedAllRules = allRules.map(r =>
                 r.id === editingRule.id ? { ...updatedRuleData, id: r.id } : r
             );
-            localStorage.setItem('factoryops_rules', JSON.stringify(updatedAllRules));
-            loadFilteredRules(device);
+        } else {
+            // Create new rule
+            const newRule = {
+                ...updatedRuleData,
+                id: `rule-${Date.now()}`,
+                status: 'Active' // Force active for rules created from device details
+            };
+            updatedAllRules = [...allRules, newRule];
         }
+
+        localStorage.setItem('factoryops_rules', JSON.stringify(updatedAllRules));
+        loadFilteredRules(device);
         setIsModalOpen(false);
     };
 
@@ -320,8 +338,16 @@ const DeviceDetails = () => {
                             {activeHubTab === 'configuration' && (
                                 <div className="applied-rules-container">
                                     <div className="panel-header">
-                                        <h4>Applied Automation Rules</h4>
-                                        <p>Protocols currently governing this asset</p>
+                                        <div className="p-header-top">
+                                            <div className="p-title-stack">
+                                                <h4>Applied Automation Rules</h4>
+                                                <p>Protocols currently governing this asset</p>
+                                            </div>
+                                            <button className="add-rule-btn-h" onClick={handleAddRule}>
+                                                <Plus size={16} />
+                                                <span>ADD RULE</span>
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="applied-rules-list">
                                         {appliedRules.length > 0 ? (
