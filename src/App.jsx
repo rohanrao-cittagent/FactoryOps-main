@@ -14,6 +14,7 @@ import Rules from './pages/Rules';
 import Reporting from './pages/Reporting';
 import Analytics from './pages/Analytics';
 import DeviceDetails from './pages/DeviceDetails';
+import Chatbot from './pages/Chatbot';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -61,6 +62,7 @@ const AnimatedRoutes = () => {
         <Route path="/reporting" element={<ProtectedRoute><PageWrapper title="Operations Reports"><Reporting /></PageWrapper></ProtectedRoute>} />
         <Route path="/analytics" element={<ProtectedRoute><PageWrapper title="Deep Analytics"><Analytics /></PageWrapper></ProtectedRoute>} />
         <Route path="/devices/:id" element={<ProtectedRoute><PageWrapper title="Device Details"><DeviceDetails /></PageWrapper></ProtectedRoute>} />
+        <Route path="/chatbot" element={<ProtectedRoute><PageWrapper title="AI Assistant"><Chatbot /></PageWrapper></ProtectedRoute>} />
 
         <Route path="*" element={<PageWrapper title="404 - Not Found"><div>Page coming soon...</div></PageWrapper>} />
       </Routes>

@@ -11,7 +11,8 @@ import {
   Settings,
   LifeBuoy,
   LogOut,
-  Factory
+  Factory,
+  Sparkles
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -24,6 +25,7 @@ const Sidebar = () => {
     { icon: <ShieldCheck size={22} />, label: 'Rules', path: '/rules' },
     { icon: <FileBox size={22} />, label: 'Reporting', path: '/reporting' },
     { icon: <BarChart3 size={22} />, label: 'Analytics', path: '/analytics' },
+    { icon: <Sparkles size={22} />, label: 'Assistant', path: '/chatbot' },
   ];
 
   return (
