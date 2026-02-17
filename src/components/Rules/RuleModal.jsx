@@ -1,8 +1,10 @@
+import { useNotification } from '../../context/NotificationContext';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown } from 'lucide-react';
 import './RuleModal.css';
 
+// ... (constants remain the same)
 const METRICS = [
     'Temperature',
     'Pressure',
@@ -36,6 +38,7 @@ const UNIT_MAP = {
 };
 
 const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
+    const { addNotification } = useNotification();
     const [name, setName] = useState('');
     const [target, setTarget] = useState('Specific Devices');
     const [selectedDevice, setSelectedDevice] = useState('D1-Compressor');
@@ -122,6 +125,20 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
             operator: conditions[0].operator,
             value: conditions[0].value
         };
+
+        if (!editingRule) {
+            addNotification(
+                'Rule Created',
+                `Automation rule "${name}" has been successfully created.`,
+                'success'
+            );
+        } else {
+            addNotification(
+                'Rule Updated',
+                `Automation rule "${name}" has been updated.`,
+                'info'
+            );
+        }
 
         onSave(ruleData);
     };

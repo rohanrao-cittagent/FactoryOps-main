@@ -35,8 +35,26 @@ const Reporting = () => {
 
     const generateMockData = () => {
         const timestamp = new Date().toLocaleString();
+        const reportId = Math.floor(10000 + Math.random() * 90000);
+
+        // Mock Event Log Data
+        const logs = [
+            { timestamp: "2/16/2026, 4:12:48 AM", severity: "Warning", device: "BULB-129", message: "High Voltage Fluctuation" },
+            { timestamp: "2/15/2026, 7:39:31 PM", severity: "Warning", device: "BULB-126", message: "Unexpected Dimming" },
+            { timestamp: "2/15/2026, 2:12:17 PM", severity: "Warning", device: "BULB-115", message: "High Voltage Fluctuation" },
+            { timestamp: "2/15/2026, 12:24:05 PM", severity: "Warning", device: "BULB-133", message: "High Voltage Fluctuation" },
+            { timestamp: "2/14/2026, 6:08:23 AM", severity: "Critical Alert", device: "BULB-116", message: "Filament Overheat Detected" },
+            { timestamp: "2/13/2026, 5:08:37 PM", severity: "Warning", device: "BULB-102", message: "Unexpected Dimming" },
+            { timestamp: "2/12/2026, 10:06:48 PM", severity: "Warning", device: "BULB-105", message: "Unexpected Dimming" },
+            { timestamp: "2/12/2026, 9:35:06 PM", severity: "Warning", device: "BULB-142", message: "Unexpected Dimming" },
+            { timestamp: "2/12/2026, 11:55:03 AM", severity: "Warning", device: "BULB-110", message: "Unexpected Dimming" },
+            { timestamp: "2/11/2026, 8:42:10 AM", severity: "Warning", device: "BULB-127", message: "High Voltage Fluctuation" },
+            { timestamp: "2/11/2026, 2:57:17 AM", severity: "Warning", device: "BULB-121", message: "High Voltage Fluctuation" },
+            { timestamp: "2/11/2026, 1:07:57 AM", severity: "Critical Alert", device: "BULB-105", message: "Filament Overheat Detected" }
+        ];
+
         const data = {
-            reportTitle: "Factory Intelligence Analytics Report",
+            reportId,
             generatedAt: timestamp,
             config: {
                 devices,
@@ -46,11 +64,14 @@ const Reporting = () => {
                 format
             },
             summary: {
-                totalUptime: "99.8%",
-                efficiencyScore: "87.4",
-                anomaliesDetected: 4,
-                maintenanceAlerts: 2
-            }
+                operationalUptime: "99.92%",
+                systemEfficiency: "94.2/100",
+                activeUnits: "842 Bulbs",
+                avgLifespan: "15,000 hrs",
+                estEnergySavings: "1,240 kWh",
+                estCostSavings: "$3,450"
+            },
+            logs
         };
         return data;
     };
@@ -65,43 +86,65 @@ const Reporting = () => {
             mimeType = 'application/json';
             extension = 'json';
         } else if (format === 'Excel') {
-            // CSV for Excel compatibility in simple demo
-            const headers = ['Report Title', 'Generated At', 'Uptime', 'Efficiency'];
-            const row = [data.reportTitle, data.generatedAt, data.summary.totalUptime, data.summary.efficiencyScore];
-            content = [headers.join(','), row.join(',')].join('\n');
+            // Simplified CSV
+            const headers = ['Timestamp', 'Severity', 'Device', 'Message'];
+            const rows = data.logs.map(log =>
+                [log.timestamp, log.severity, log.device, log.message].join(',')
+            );
+            content = [headers.join(','), ...rows].join('\n');
             mimeType = 'text/csv';
             extension = 'csv';
         } else {
-            // PDF simulation (Text file labelled PDF)
+            // Custom Intelligence Report Format
+            const pad = (str, len) => (str + ' '.repeat(len)).slice(0, len);
+
             content = `
-========================================
-    FACTORY OPS - ANALYTICS REPORT
-========================================
-Generated: ${data.generatedAt}
-Config: ${data.config.devices} (${data.config.target})
-Range: ${data.config.range}
+================================================================================
+       CITTAGENT / FACTORYOPS - INTELLIGENCE REPORT
+================================================================================
+REPORT ID: ${data.reportId}
+GENERATED: ${data.generatedAt}
+CONFIDENTIALITY: INTERNAL USE ONLY
 
-SUMMARY DATA:
-----------------------------------------
-Uptime: ${data.summary.totalUptime}
-Efficiency: ${data.summary.efficiencyScore}%
-Anomalies: ${data.summary.anomaliesDetected}
-Alerts: ${data.summary.maintenanceAlerts}
+--------------------------------------------------------------------------------
+1. CONFIGURATION OVERVIEW
+--------------------------------------------------------------------------------
+Subject Scope:    ${data.config.devices} (${data.config.target})
+Time Range:       ${data.config.range}
+Analysis Modules:
+${data.config.analysisEnabled.map(a => `[x] ${a}`).join('\n')}
 
-ANALYSIS PROTOCOLS:
-${data.config.analysisEnabled.map(a => `- ${a}`).join('\n')}
+--------------------------------------------------------------------------------
+2. SYSTEM PERFORMANCE SUMMARY
+--------------------------------------------------------------------------------
+Operational Uptime:    ${data.summary.operationalUptime}
+System Efficiency:     ${data.summary.systemEfficiency}
+Active Units:          ${data.summary.activeUnits}
+Avg. Lifespan:         ${data.summary.avgLifespan}
+Est. Energy Savings:   ${data.summary.estEnergySavings}
+Est. Cost Savings:     ${data.summary.estCostSavings}
 
-[End of Report]
-            `;
+--------------------------------------------------------------------------------
+3. ANOMALY & EVENT LOG
+--------------------------------------------------------------------------------
+TIMESTAMP                     | SEVERITY        | DEVICE      | MESSAGE
+--------------------------------------------------------------------------------
+${data.logs.map(log =>
+                `${pad(log.timestamp, 30)}| ${pad(log.severity, 16)}| ${pad(log.device, 12)}| ${log.message}`
+            ).join('\n')}
+
+--------------------------------------------------------------------------------
+[END OF REPORT]
+            `.trim();
             mimeType = 'text/plain';
-            extension = 'pdf.txt'; // Labelled so user sees it's a simulated PDF
+            extension = 'txt';
         }
 
         const blob = new Blob([content], { type: mimeType });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `FactoryReport_${new Date().toISOString().split('T')[0]}.${extension}`;
+        link.download = `Intelligence_Report_${data.reportId}.${extension}`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

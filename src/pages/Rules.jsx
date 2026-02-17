@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { Search, Plus, Play, Pause, Settings, Shield, Zap, Flame, Droplet, Activity, Check, Trash2 } from 'lucide-react';
 import DataTable from '../components/Shared/DataTable';
 import RuleModal from '../components/Rules/RuleModal';
+import { useToast } from '../components/Shared/Toast';
+import { NotificationService } from '../services/NotificationService';
+import { api } from '../api/client';
 import './Rules.css';
 
 const DEFAULT_RULES = [
@@ -64,21 +67,28 @@ const ICON_MAP = {
     Shield: <Shield size={16} />
 };
 
-
 const Rules = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [rules, setRules] = useState([]);
     const [editingRule, setEditingRule] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const { showToast, ToastContainer } = useToast();
 
     useEffect(() => {
-        const savedRules = localStorage.getItem('factoryops_rules');
-        if (savedRules) {
-            setRules(JSON.parse(savedRules));
-        } else {
-            setRules(DEFAULT_RULES);
-            localStorage.setItem('factoryops_rules', JSON.stringify(DEFAULT_RULES));
-        }
+        const fetchRules = async () => {
+            try {
+                const response = await api.getRules();
+                setRules(response.data);
+            } catch (error) {
+                console.error('Failed to fetch rules:', error);
+                // Fallback to local storage or defaults if API fails
+                const savedRules = localStorage.getItem('factoryops_rules');
+                if (savedRules) {
+                    setRules(JSON.parse(savedRules));
+                }
+            }
+        };
+        fetchRules();
     }, []);
 
     const saveRules = (newRules) => {
@@ -102,18 +112,32 @@ const Rules = () => {
         }
     };
 
-    const handleAddOrUpdateRule = (ruleData) => {
-        if (editingRule) {
-            const updatedRules = rules.map(r =>
-                r.id === editingRule.id ? { ...ruleData, id: r.id } : r
-            );
-            saveRules(updatedRules);
-        } else {
-            const newRule = {
-                ...ruleData,
-                id: Date.now(),
-            };
-            saveRules([...rules, newRule]);
+    const handleAddOrUpdateRule = async (ruleData) => {
+        try {
+            if (editingRule) {
+                await api.updateRule(editingRule.id, ruleData);
+                setRules(rules.map(r => r.id === editingRule.id ? { ...ruleData, id: r.id } : r));
+                showToast('Rule updated successfully', 'success');
+            } else {
+                const response = await api.createRule(ruleData);
+                const newRule = response.data;
+                setRules([...rules, newRule]);
+
+                // Trigger email notification
+                NotificationService.sendEmail(
+                    'operator@factoryops.com',
+                    `New Rule Created: ${ruleData.name}`,
+                    `A new automation rule "${ruleData.name}" has been established for ${ruleData.devices}. Logic: ${ruleData.condition}`
+                ).then(() => {
+                    showToast(`Rule activated! Confirmation email sent.`, 'success');
+                }).catch(err => {
+                    console.error("Email failed:", err);
+                    showToast('Rule created, but email failed.', 'warning');
+                });
+            }
+        } catch (error) {
+            console.error('Failed to save rule:', error);
+            showToast('Failed to save rule', 'error');
         }
         setIsModalOpen(false);
         setEditingRule(null);
@@ -244,6 +268,7 @@ const Rules = () => {
                 editingRule={editingRule}
             />
 
+            <ToastContainer />
         </div >
     );
 };

@@ -35,13 +35,15 @@ const PerformanceChart = ({ data, title, dataKey, color = "#3b82f6" }) => {
                             dataKey="name"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fill: '#64748b', fontSize: 12 }}
+                            tick={{ fill: '#64748b', fontSize: 10 }}
                             dy={10}
+                            minTickGap={30}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: '#64748b', fontSize: 12 }}
+                            domain={dataKey === 'efficiency' ? [0, 100] : ['auto', 'auto']}
                         />
                         <Tooltip
                             contentStyle={{

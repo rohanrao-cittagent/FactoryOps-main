@@ -3,14 +3,20 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Search, Sun, Moon, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useNotification } from '../../context/NotificationContext';
 import './Header.css';
 
 const Header = ({ title = "Dashboard Overview" }) => {
     const { theme, toggleTheme } = useTheme();
+    const { notifications, markAsRead, markAllAsRead, clearAll } = useNotification();
     const navigate = useNavigate();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const [user, setUser] = useState(null);
     const menuRef = useRef(null);
+    const notificationRef = useRef(null);
+
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     useEffect(() => {
         const savedUser = localStorage.getItem('factoryops_user');
@@ -22,6 +28,9 @@ const Header = ({ title = "Dashboard Overview" }) => {
             if (menuRef.current && !menuRef.current.contains(event.target)) {
                 setIsMenuOpen(false);
             }
+            if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+                setIsNotificationsOpen(false);
+            }
         };
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
@@ -32,11 +41,19 @@ const Header = ({ title = "Dashboard Overview" }) => {
         navigate('/login');
     };
 
+    const handleNotificationClick = (id) => {
+        markAsRead(id);
+    };
+
     return (
         <header className="floating-header">
             <div className="header-pill">
                 <div className="header-breadcrumbs">
-                    <span className="root">FactoryOps</span>
+                    <span className="brand-text">
+                        <span className="b-citta">Cittagent</span>
+                        <span className="b-divider">/</span>
+                        <span className="b-ops">FactoryOps</span>
+                    </span>
                     <span className="separator">/</span>
                     <span className="current">{title}</span>
                 </div>
@@ -57,10 +74,63 @@ const Header = ({ title = "Dashboard Overview" }) => {
                         {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
                     </motion.div>
 
-                    <motion.div whileHover={{ scale: 1.05 }} className="control-icon-btn">
-                        <Bell size={20} />
-                        <span className="pill-badge">3</span>
-                    </motion.div>
+                    {/* Notification Bell */}
+                    <div className="notification-wrapper" ref={notificationRef}>
+                        <motion.div
+                            whileHover={{ scale: 1.05 }}
+                            className="control-icon-btn"
+                            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                        >
+                            <Bell size={20} />
+                            {unreadCount > 0 && <span className="pill-badge">{unreadCount}</span>}
+                        </motion.div>
+
+                        <AnimatePresence>
+                            {isNotificationsOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="notification-dropdown-menu"
+                                >
+                                    <div className="notification-header">
+                                        <span className="title">Notifications</span>
+                                        {unreadCount > 0 && (
+                                            <span className="mark-read" onClick={markAllAsRead}>Mark all read</span>
+                                        )}
+                                    </div>
+                                    <div className="dropdown-divider"></div>
+                                    <div className="notification-list">
+                                        {notifications.length === 0 ? (
+                                            <div className="empty-notifications">No notifications</div>
+                                        ) : (
+                                            notifications.map(n => (
+                                                <div
+                                                    key={n.id}
+                                                    className={`notification-item ${n.read ? 'read' : 'unread'} ${n.type}`}
+                                                    onClick={() => handleNotificationClick(n.id)}
+                                                >
+                                                    <div className="notif-indicator"></div>
+                                                    <div className="notif-content">
+                                                        <div className="notif-title">{n.title}</div>
+                                                        <div className="notif-message">{n.message}</div>
+                                                        <div className="notif-time">
+                                                            {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                    <div className="dropdown-divider"></div>
+                                    <div className="notification-footer" onClick={clearAll}>
+                                        Clear History
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
 
                     <div className="header-profile-section" ref={menuRef}>
                         <div className="profile-trigger" onClick={() => setIsMenuOpen(!isMenuOpen)}>

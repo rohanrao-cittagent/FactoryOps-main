@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import PerformanceChart from '../components/Analytics/PerformanceChart';
 import RuleModal from '../components/Rules/RuleModal';
+import { useToast } from '../components/Shared/Toast';
+import { NotificationService } from '../services/NotificationService';
 import { mockDevices } from '../data/mockDevices';
 import './DeviceDetails.css';
 
@@ -58,6 +60,7 @@ const DeviceDetails = () => {
     const [appliedRules, setAppliedRules] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRule, setEditingRule] = useState(null);
+    const { showToast, ToastContainer } = useToast();
 
     const loadFilteredRules = (foundDevice) => {
         const savedRules = localStorage.getItem('factoryops_rules');
@@ -94,8 +97,18 @@ const DeviceDetails = () => {
         const fetchDevice = () => {
             const foundDevice = mockDevices.find(d => d.id === id);
             if (foundDevice) {
-                setDevice(foundDevice);
-                setTelemetry([]);
+                // Initialize with some historical data
+                const initialTelemetry = Array.from({ length: 10 }).map((_, i) => {
+                    const time = new Date(Date.now() - (10 - i) * 3000);
+                    return {
+                        timestamp: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                        efficiency: Math.floor(70 + Math.random() * 20),
+                        vibration: Number((2 + Math.random() * 3).toFixed(1))
+                    };
+                });
+
+                setDevice({ ...foundDevice });
+                setTelemetry(initialTelemetry);
                 setError(null);
                 loadFilteredRules(foundDevice);
             } else {
@@ -106,6 +119,58 @@ const DeviceDetails = () => {
 
         fetchDevice();
     }, [id]);
+
+    // Live Telemetry Simulation
+    useEffect(() => {
+        if (!device || loading) return;
+
+        const interval = setInterval(() => {
+            setDevice(prev => {
+                if (!prev) return prev;
+
+                // Simulate metric fluctuations
+                const updatedMetrics = { ...prev.metrics };
+                if (updatedMetrics.pressure) {
+                    const change = (Math.random() - 0.5) * 2;
+                    updatedMetrics.pressure.value = Number((updatedMetrics.pressure.value + change).toFixed(1));
+                    updatedMetrics.pressure.percent = Math.min(100, Math.max(0, updatedMetrics.pressure.percent + (change * 2)));
+                }
+                if (updatedMetrics.temperature) {
+                    const change = (Math.random() - 0.5) * 1.5;
+                    updatedMetrics.temperature.value = Number((updatedMetrics.temperature.value + change).toFixed(1));
+                    updatedMetrics.temperature.percent = Math.min(100, Math.max(0, updatedMetrics.temperature.percent + (change * 1.5)));
+                }
+                if (updatedMetrics.vibration) {
+                    const change = (Math.random() - 0.5) * 0.4;
+                    updatedMetrics.vibration.value = Number((updatedMetrics.vibration.value + change).toFixed(2));
+                    updatedMetrics.vibration.percent = Math.min(100, Math.max(0, updatedMetrics.vibration.percent + (change * 10)));
+                }
+                if (updatedMetrics.power) {
+                    const change = (Math.random() - 0.5) * 0.2;
+                    updatedMetrics.power.value = Number((updatedMetrics.power.value + change).toFixed(2));
+                    updatedMetrics.power.percent = Math.min(100, Math.max(0, updatedMetrics.power.percent + (change * 5)));
+                }
+
+                return { ...prev, metrics: updatedMetrics };
+            });
+
+            setTelemetry(prev => {
+                const now = new Date();
+                const newEntry = {
+                    timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                    efficiency: Math.floor(75 + Math.random() * 15),
+                    vibration: Number((device.metrics?.vibration?.value || 3).toFixed(2))
+                };
+
+                // Keep last 15 entries
+                const updated = [...prev, newEntry];
+                if (updated.length > 15) return updated.slice(-15);
+                return updated;
+            });
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [device?.id, loading]);
 
     const handleEditRule = (rule) => {
         setEditingRule(rule);
@@ -139,19 +204,30 @@ const DeviceDetails = () => {
 
         localStorage.setItem('factoryops_rules', JSON.stringify(updatedAllRules));
         loadFilteredRules(device);
+
+        if (!editingRule) {
+            // New rule created
+            NotificationService.sendEmail(
+                'operator@factoryops.com',
+                `New Asset Protocol: ${updatedRuleData.name}`,
+                `A new automation rule "${updatedRuleData.name}" has been linked to ${device.name}. Rule logic: ${updatedRuleData.condition}`
+            ).then(() => {
+                showToast(`Asset protocol linked! Email notification sent.`, 'success');
+            });
+        }
+
         setIsModalOpen(false);
     };
 
     // Format telemetry for chart
     const chartData = telemetry.length > 0
-        ? telemetry.slice(-10).map((t, i) => ({
-            name: `T-${i}`,
+        ? telemetry.map((t) => ({
+            name: t.timestamp,
             efficiency: t.efficiency || 0,
             vibration: t.vibration || 0
         }))
         : [
-            { name: 'T-0', efficiency: 0, vibration: 0 },
-            { name: 'T-1', efficiency: 0, vibration: 0 },
+            { name: 'Waiting...', efficiency: 0, vibration: 0 },
         ];
 
     if (loading) {
@@ -412,6 +488,8 @@ const DeviceDetails = () => {
                     onSave={handleSaveRule}
                     editingRule={editingRule}
                 />
+
+                <ToastContainer />
             </main>
         </div>
     );

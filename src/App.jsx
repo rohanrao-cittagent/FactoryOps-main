@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Layout/Sidebar';
 import Header from './components/Layout/Header';
 import { ThemeProvider } from './context/ThemeContext';
+import { NotificationProvider } from './context/NotificationContext';
 
 // Pages
 import Dashboard from './pages/Dashboard';
@@ -51,7 +52,9 @@ const AnimatedRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
-        <Route path="/" element={<ProtectedRoute><PageWrapper title="Dashboard Control"><Dashboard /></PageWrapper></ProtectedRoute>} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/dashboard" element={<ProtectedRoute><PageWrapper title="Dashboard Control"><Dashboard /></PageWrapper></ProtectedRoute>} />
+
         <Route path="/users" element={<ProtectedRoute><PageWrapper title="User Management"><Users /></PageWrapper></ProtectedRoute>} />
         <Route path="/devices" element={<ProtectedRoute><PageWrapper title="Equipment Fleet"><Devices /></PageWrapper></ProtectedRoute>} />
         <Route path="/rules" element={<ProtectedRoute><PageWrapper title="Automation Rules"><Rules /></PageWrapper></ProtectedRoute>} />
@@ -86,9 +89,11 @@ const AppContent = () => {
 function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <NotificationProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </NotificationProvider>
     </ThemeProvider>
   );
 }

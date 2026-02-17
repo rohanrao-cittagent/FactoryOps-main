@@ -4,6 +4,7 @@ import { Search, UserPlus, Trash2, Shield, User, Check, X, Mail, MoreVertical } 
 import DataTable from '../components/Shared/DataTable';
 import MetricCard from '../components/Dashboard/MetricCard';
 import UserModal from '../components/Users/UserModal';
+import { useNotification } from '../context/NotificationContext';
 import './Users.css';
 
 const INITIAL_USERS = [
@@ -14,6 +15,7 @@ const INITIAL_USERS = [
 ];
 
 const Users = () => {
+    const { addNotification } = useNotification();
     const [users, setUsers] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +44,13 @@ const Users = () => {
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`
         };
         saveUsers([...users, newUser]);
+
+        addNotification(
+            'User Invited',
+            `${userData.name} has been invited to join the ${userData.role} team.`,
+            'success'
+        );
+
         setIsModalOpen(false);
     };
 

@@ -4,26 +4,33 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, Github, Chrome, Factory } from 'lucide-react';
 import './Auth.css';
 
+import { api } from '../api/client';
+import { useToast } from '../components/Shared/Toast';
+
 const Login = () => {
     const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    // const { showToast } = useToast(); // If Toast context is available
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Mock authentication delay
-        setTimeout(() => {
-            localStorage.setItem('factoryops_user', JSON.stringify({
-                name: 'Rohan',
-                email: email || 'admin@factoryops.ai',
-                role: 'Administrator'
-            }));
+        try {
+            const response = await api.login({ email, password });
+            const user = response.data;
+
+            localStorage.setItem('factoryops_user', JSON.stringify(user));
+            // showToast(`Welcome back, ${user.name}`, 'success');
+            navigate('/dashboard');
+        } catch (error) {
+            console.error('Login failed:', error);
+            alert('Login Failed: ' + (error.response?.data?.detail || 'Invalid credentials'));
+        } finally {
             setIsLoading(false);
-            navigate('/');
-        }, 1500);
+        }
     };
 
     return (

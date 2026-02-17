@@ -18,7 +18,7 @@ import './Sidebar.css';
 const Sidebar = () => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const menuItems = [
-    { icon: <LayoutDashboard size={22} />, label: 'Dashboard', path: '/' },
+    { icon: <LayoutDashboard size={22} />, label: 'Dashboard', path: '/dashboard' },
     { icon: <Users size={22} />, label: 'Users', path: '/users' },
     { icon: <Cpu size={22} />, label: 'Devices', path: '/devices' },
     { icon: <ShieldCheck size={22} />, label: 'Rules', path: '/rules' },
@@ -31,7 +31,7 @@ const Sidebar = () => {
       className={`floating-dock ${isExpanded ? 'expanded' : ''}`}
       onHoverStart={() => setIsExpanded(true)}
       onHoverEnd={() => setIsExpanded(false)}
-      animate={{ width: isExpanded ? 280 : 88 }}
+      animate={{ width: isExpanded ? 300 : 88 }}
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="dock-logo">
@@ -45,7 +45,10 @@ const Sidebar = () => {
               animate={{ opacity: 1, x: 0 }}
               className="logo-text"
             >
-              FactoryOps
+              <div className="brand-stack">
+                <span className="brand-citta">Cittagent</span>
+                <span className="brand-ops">FactoryOps</span>
+              </div>
             </motion.span>
           )}
         </AnimatePresence>

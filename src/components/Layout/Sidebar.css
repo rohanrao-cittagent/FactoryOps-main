@@ -40,11 +40,34 @@
 
 .logo-text {
     font-family: 'Outfit', sans-serif;
-    font-weight: 900;
-    font-size: 1.4rem;
     color: var(--text-primary);
-    letter-spacing: -0.04em;
     white-space: nowrap;
+}
+
+.brand-stack {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1;
+    gap: 2px;
+}
+
+.brand-citta {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding-left: 2px;
+}
+
+.brand-ops {
+    font-size: 1.3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
 }
 
 .dock-nav {

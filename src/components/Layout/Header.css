@@ -37,12 +37,29 @@
     gap: 0.75rem;
 }
 
-.header-breadcrumbs .root {
-    font-weight: 800;
-    color: var(--text-dim);
+.header-breadcrumbs .brand-text {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9rem;
+}
+
+.header-breadcrumbs .b-citta {
+    font-weight: 600;
+    color: var(--text-secondary);
+    letter-spacing: 0.01em;
+}
+
+.header-breadcrumbs .b-divider {
+    color: var(--accent-primary);
+    opacity: 0.6;
     font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
+}
+
+.header-breadcrumbs .b-ops {
+    font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
 }
 
 .header-breadcrumbs .separator {
@@ -279,4 +296,178 @@
 
 :root.light .dropdown-item:hover {
     background: rgba(0, 0, 0, 0.04);
+}
+
+/* Notification Styles */
+.notification-wrapper {
+    position: relative;
+}
+
+.notification-dropdown-menu {
+    position: absolute;
+    top: calc(100% + 1rem);
+    right: -80px;
+    /* Center aligned relative to bell roughly */
+    width: 320px;
+    max-height: 480px;
+    background: rgba(15, 23, 42, 0.98);
+    backdrop-filter: blur(40px);
+    -webkit-backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 20px;
+    padding: 0.5rem;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+}
+
+.notification-header {
+    padding: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.notification-header .title {
+    font-weight: 700;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+}
+
+.notification-header .mark-read {
+    font-size: 0.75rem;
+    color: var(--accent-primary);
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.notification-header .mark-read:hover {
+    text-decoration: underline;
+}
+
+.notification-list {
+    overflow-y: auto;
+    max-height: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.notification-item {
+    padding: 0.8rem 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    gap: 12px;
+    transition: var(--transition-smooth);
+    position: relative;
+    border: 1px solid transparent;
+}
+
+.notification-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.notification-item.unread {
+    background: rgba(var(--accent-primary-rgb, 99, 102, 241), 0.05);
+}
+
+.notif-indicator {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.notification-item.unread .notif-indicator {
+    background-color: var(--accent-primary);
+    box-shadow: 0 0 8px var(--accent-primary);
+}
+
+.notification-item.read .notif-indicator {
+    background-color: var(--text-dim);
+}
+
+.notif-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.notif-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.notif-message {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+}
+
+.notif-time {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 4px;
+}
+
+/* Notification Types */
+.notification-item.success {
+    border-left: 3px solid var(--accent-success);
+}
+
+.notification-item.warning {
+    border-left: 3px solid var(--accent-warning);
+}
+
+.notification-item.error {
+    border-left: 3px solid var(--accent-error);
+}
+
+.notification-item.info {
+    border-left: 3px solid var(--accent-primary);
+}
+
+.empty-notifications {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+.notification-footer {
+    padding: 0.8rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 0.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.notification-footer:hover {
+    color: var(--text-primary);
+}
+
+/* Light Mode Overrides */
+:root.light .notification-dropdown-menu {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+:root.light .notification-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+:root.light .notification-item.unread {
+    background: rgba(var(--accent-primary-rgb, 99, 102, 241), 0.08);
+}
+
+:root.light .notification-footer {
+    border-top-color: rgba(0, 0, 0, 0.08);
 }

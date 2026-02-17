@@ -1,412 +1,334 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 import {
-    Settings2, Zap, CheckCircle2, BarChart3, Cpu,
-    ArrowLeft, Activity, Workflow, ShieldAlert, Sliders,
-    Play, Save, RotateCcw, Database, Layers, Binary,
-    Filter, ChevronRight, AlertTriangle, TrendingUp, Info,
+    Activity,
+    CheckCircle2,
+    AlertTriangle,
+    Download,
+    Play,
+    Database,
+    Cpu,
+    Zap,
+    ChevronDown,
+    Search,
+    FileText,
     Loader2
 } from 'lucide-react';
-import { mockDevices } from '../data/mockDevices';
+import AnomalyChart from '../components/Analytics/AnomalyChart';
+import api from '../api/client';
 import './Analytics.css';
 
-const ModeCard = ({ title, description, features, icon: Icon, buttonText, isAutopilot, onClick, delay }) => {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay, ease: [0.16, 1, 0.3, 1] }}
-            className={`analytics-logic-hub ${isAutopilot ? 'autopilot-mode' : 'standard-mode'}`}
-        >
-            <div className="hub-glass-overlay" />
-
-            {isAutopilot && (
-                <div className="hub-badge-premium">
-                    <Cpu size={14} />
-                    <span>RECOMMENDED</span>
-                </div>
-            )}
-
-            <div className="hub-header">
-                <div className="hub-icon-container">
-                    <Icon size={28} strokeWidth={1.5} />
-                    <div className="hub-icon-glow" />
-                </div>
-            </div>
-
-            <div className="hub-body">
-                <h2 className="hub-title-gradient">{title}</h2>
-                <p className="hub-description">{description}</p>
-
-                <div className="features-section">
-                    <span className="features-label">Protocol Inclusion:</span>
-                    <ul className="hub-features-list">
-                        {features.map((feature, i) => (
-                            <li key={i}>
-                                <div className="feature-check-icon">
-                                    <CheckCircle2 size={14} />
-                                </div>
-                                <span>{feature}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
-
-            <div className="hub-footer">
-                <button
-                    className={`btn-hub-action ${isAutopilot ? 'neon' : 'outline'}`}
-                    onClick={() => onClick(isAutopilot ? 'autopilot' : 'standard')}
-                >
-                    <span>{buttonText}</span>
-                    {isAutopilot && <Zap size={16} fill="currentColor" />}
-                </button>
-            </div>
-        </motion.div>
-    );
-};
-
-const StandardDashboard = ({ onBack }) => {
+const Analytics = () => {
     const [devices, setDevices] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loadingDevices, setLoadingDevices] = useState(true);
+
     const [config, setConfig] = useState({
-        algorithm: 'Random Forest',
-        learningRate: 0.001,
-        epochs: 50,
-        batchSize: 32,
-        features: ['FFT', 'RMS'],
-        split: 80
+        machine: '',
+        analysisType: 'Anomaly Detection',
+        model: 'Isolation_forest',
+        dataset: 'datasets/D1/20260215_202604'
     });
 
+    const [jobStatus, setJobStatus] = useState({
+        id: '---',
+        status: 'idle' // idle, running, completed
+    });
+
+    const [results, setResults] = useState({
+        totalPoints: 0,
+        totalAnomalies: 0,
+        anomalyPercentage: '0%'
+    });
+
+    const [chartData, setChartData] = useState([]);
+    const [tableData, setTableData] = useState([]);
+
+    // Fetch Devices on Mount
     useEffect(() => {
-        setDevices(mockDevices);
-        setLoading(false);
+        const fetchDevices = async () => {
+            try {
+                const response = await api.getEquipment();
+                setDevices(response.data);
+                if (response.data.length > 0) {
+                    setConfig(prev => ({ ...prev, machine: response.data[0].name }));
+                }
+            } catch (error) {
+                console.error("Failed to fetch devices:", error);
+            } finally {
+                setLoadingDevices(false);
+            }
+        };
+
+        fetchDevices();
     }, []);
 
-    if (loading) {
-        return (
-            <div className="analytics-loading">
-                <Loader2 className="animate-spin" size={40} />
-                <p>Initializing Manual Config Hub...</p>
-            </div>
-        );
-    }
+    // Mock Data Generator for Batch Process
+    const generateBatchData = (count = 100) => {
+        const data = [];
+        const anomalies = [];
+        const baseTimestamp = Date.now();
 
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            className="detail-dashboard"
-        >
-            <header className="dashboard-header">
-                <div className="header-left">
-                    <div className="title-with-icon">
-                        <Settings2 size={24} className="text-secondary" />
-                        <h1>Standard Mode Config</h1>
-                    </div>
-                    <p className="subtitle">Manual control over model architecture, hyperparameters, and feature engineering.</p>
-                </div>
-                <button className="btn-switch-mode" onClick={onBack}>
-                    Back to Selection
-                </button>
-            </header>
+        let anomalyCount = 0;
 
-            <div className="dashboard-grid">
-                {/* Protocol 1: Architecture */}
-                <div className="dash-card">
-                    <div className="card-header">
-                        <Binary size={20} className="text-secondary" />
-                        <h3>Base Architecture</h3>
-                    </div>
-                    <div className="config-form">
-                        <div className="parameter-group">
-                            <label className="param-label">Select Algorithm</label>
-                            <div className="custom-select-box">
-                                <span>{config.algorithm}</span>
-                                <ChevronRight size={14} style={{ transform: 'rotate(90deg)' }} />
-                            </div>
-                        </div>
-                        <div className="parameter-group">
-                            <div className="param-label">
-                                <span>Train/Test Split</span>
-                                <span className="param-value">{config.split}%</span>
-                            </div>
-                            <input
-                                type="range"
-                                className="param-slider"
-                                value={config.split}
-                                onChange={(e) => setConfig({ ...config, split: parseInt(e.target.value) })}
-                            />
-                        </div>
-                    </div>
-                </div>
+        for (let i = 0; i < count; i++) {
+            // base value + random noise
+            const baseValue = Math.sin((baseTimestamp - i * 60000) / 10000) * 0.05;
+            const isAnomaly = Math.random() > 0.92; // 8% chance of anomaly
 
-                {/* Protocol 2: Hyperparameters */}
-                <div className="dash-card">
-                    <div className="card-header">
-                        <Sliders size={20} className="text-primary" />
-                        <h3>Hyperparameters</h3>
-                    </div>
-                    <div className="config-form">
-                        <div className="grid-params">
-                            <div className="parameter-group">
-                                <label className="param-label">Epochs</label>
-                                <input type="number" className="param-number-input" value={config.epochs} readOnly />
-                            </div>
-                            <div className="parameter-group">
-                                <label className="param-label">Batch Size</label>
-                                <input type="number" className="param-number-input" value={config.batchSize} readOnly />
-                            </div>
-                        </div>
-                        <div className="toggle-list">
-                            <label className="toggle-item">
-                                <span>Accelerate GPU</span>
-                                <div className="toggle-switch active"><div className="toggle-knob" /></div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
+            let value = baseValue + (Math.random() * 0.02 - 0.01);
+            let score = (Math.random() * 0.05 - 0.025);
 
-                {/* Protocol 3: Control Actions */}
-                <div className="dash-card">
-                    <div className="card-header">
-                        <Workflow size={20} className="text-dim" />
-                        <h3>Action Control</h3>
-                    </div>
-                    <div className="action-buttons" style={{ height: '100%', justifyContent: 'center' }}>
-                        <button className="btn-dash primary">DEPLOY MODEL</button>
-                        <button className="btn-dash outline" style={{ marginTop: '0.75rem' }}>EXPORT WEIGHTS</button>
-                    </div>
-                </div>
+            if (isAnomaly) {
+                // Anomalies deviate significantly
+                value += (Math.random() > 0.5 ? 0.1 : -0.1);
+                score = (Math.random() * 0.15 + 0.05); // Higher anomaly score
+                anomalyCount++;
+            }
 
-                {/* Protocol 4: Main Visualization (Full Width) */}
-                <div className="dash-card main-chart" style={{ gridColumn: 'span 3' }}>
-                    <div className="card-header">
-                        <Activity size={20} className="text-secondary" />
-                        <h3>Real-time Training Convergence Pattern</h3>
-                    </div>
-                    <div className="chart-placeholder" style={{ minHeight: '250px' }}>
-                        <div className="wave-animation">
-                            {[...Array(40)].map((_, i) => (
-                                <motion.div
-                                    key={i}
-                                    className="wave-bar"
-                                    animate={{ height: Math.max(10, 80 - i * 1.5 + Math.random() * 25) }}
-                                    transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.05 }}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </div>
+            const point = {
+                timestamp: new Date(baseTimestamp - (count - i) * 60000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                value: value,
+                score: score,
+                isAnomaly: score > 0.04
+            };
 
-            {/* New Standard Mode Insights Section */}
-            <div className="insights-container standard-insights">
-                <div className="insights-header">
-                    <h3>SESSION ANALYTICS & LOGS (FLEET OVERVIEW)</h3>
-                </div>
-                <div className="insights-list">
-                    {devices.length > 0 ? devices.map((dev, i) => (
-                        <div key={i} className="insight-row standard-row">
-                            <div className={`insight-icon-box ${dev.status === 'Running' ? 'info' : 'warning'}`}>
-                                {dev.status === 'Running' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}
-                            </div>
-                            <div className="insight-content">
-                                <h4>{dev.name} - {dev.type}</h4>
-                                <p>Health: {dev.health}% • Location: {dev.location} • Uptime: {dev.uptime}</p>
-                                <span className={`insight-badge ${dev.status === 'Running' ? 'info' : 'warning'}`}>
-                                    {dev.status === 'Running' ? 'OPERATIONAL' : 'CHECK REQUIRED'}
-                                </span>
-                            </div>
-                            <ChevronRight size={20} className="insight-arrow" />
-                        </div>
-                    )) : (
-                        <div className="insight-row empty">
-                            <p>No equipment data available from backend.</p>
-                        </div>
-                    )}
-                </div>
-                <div className="insights-footer">
-                    <button className="btn-insight-action">View Session Logs</button>
-                    <button className="btn-insight-action">Download Weights (.pth)</button>
-                </div>
-            </div>
-        </motion.div>
-    );
-};
-
-const AutopilotDashboard = ({ onBack }) => {
-    const [devices, setDevices] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        setDevices(mockDevices);
-        setLoading(false);
-    }, []);
-
-    if (loading) {
-        return (
-            <div className="analytics-loading">
-                <Loader2 className="animate-spin" size={40} />
-                <p>Establishing Autopilot Connection...</p>
-            </div>
-        );
-    }
-
-    return (
-        <motion.div
-            initial={{ opacity: 0, x: 50 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -50 }}
-            className="detail-dashboard autopilot-dash"
-        >
-            <header className="dashboard-header">
-                <div className="header-left">
-                    <div className="title-with-icon">
-                        <Zap size={24} className="text-secondary" />
-                        <h1>Autopilot Active</h1>
-                    </div>
-                    <p className="subtitle">Monitoring {devices.length} sensor points across fleet. Models optimized recently.</p>
-                </div>
-                <button className="btn-switch-mode" onClick={onBack}>
-                    Switch Mode
-                </button>
-            </header>
-
-            {/* Protocol Status Cards */}
-            <div className="autopilot-top-grid">
-                <div className="protocol-card">
-                    <div className="card-icon-bg"><Activity size={20} /></div>
-                    <span className="label">DATA INGESTION</span>
-                    <div className="status-row">
-                        <div className="status-indicator active" />
-                        <strong>Active</strong>
-                    </div>
-                    <span className="metadata">Latency: &lt;50ms</span>
-                </div>
-                <div className="protocol-card">
-                    <div className="card-icon-bg"><Sliders size={20} /></div>
-                    <span className="label">FEATURE ENG.</span>
-                    <div className="status-row">
-                        <div className="status-indicator active" />
-                        <strong>Active</strong>
-                    </div>
-                    <span className="metadata">Features: {devices.length * 4}</span>
-                </div>
-                <div className="protocol-card">
-                    <div className="card-icon-bg"><Zap size={20} /></div>
-                    <span className="label">MODEL TRAINING</span>
-                    <div className="status-row">
-                        <div className="status-indicator optimized" />
-                        <strong>Optimized</strong>
-                    </div>
-                    <span className="metadata">Accuracy: 94.7%</span>
-                </div>
-            </div>
-
-            {/* Critical Insights Section */}
-            <div className="insights-container">
-                <div className="insights-header">
-                    <h3>CRITICAL INSIGHTS (LIVE FLEET DATA)</h3>
-                </div>
-                <div className="insights-list">
-                    {devices.filter(d => d.health < 80).map((dev, i) => (
-                        <div key={i} className="insight-row">
-                            <div className={`insight-icon-box ${dev.health < 50 ? 'critical' : 'warning'}`}>
-                                <AlertTriangle size={18} />
-                            </div>
-                            <div className="insight-content">
-                                <h4>Degradation detected on {dev.id} ({dev.name})</h4>
-                                <p>Health Drop: {100 - dev.health}% • Manufacturer: {dev.manufacturer} • Model: {dev.model}</p>
-                                <span className={`insight-badge ${dev.health < 50 ? 'critical' : 'warning'}`}>
-                                    {dev.health < 50 ? 'URGENT CHECK REQUIRED' : 'RECOMMENDED: INSPECTION'}
-                                </span>
-                            </div>
-                            <ChevronRight size={20} className="insight-arrow" />
-                        </div>
-                    ))}
-                    {devices.filter(d => d.health < 80).length === 0 && (
-                        <div className="insight-row empty">
-                            <div className="insight-icon-box info">
-                                <CheckCircle2 size={18} />
-                            </div>
-                            <div className="insight-content">
-                                <h4>All systems nominal</h4>
-                                <p>No critical performance drifts detected across {devices.length} devices.</p>
-                                <span className="insight-badge info">OPTIMIZED</span>
-                            </div>
-                        </div>
-                    )
-                    }
-                </div>
-                <div className="insights-footer">
-                    <button className="btn-insight-action">View All Insights</button>
-                    <button className="btn-insight-action">Export Summary</button>
-                </div>
-            </div>
-        </motion.div>
-    );
-};
-
-const Analytics = () => {
-    const [activeView, setActiveView] = useState('selection');
-
-    const modes = [
-        {
-            title: 'Standard Mode',
-            description: 'Build and run your own specific models based on your manual configuration. Full control over all parameters, feature engineering, and model selection.',
-            features: [
-                'Manual model configuration',
-                'Custom feature engineering',
-                'Full parameter control',
-                'Advanced validation options'
-            ],
-            icon: Settings2,
-            buttonText: 'Enter Standard Mode',
-            isAutopilot: false
-        },
-        {
-            title: 'Autopilot Mode',
-            description: 'System-managed ML pipelines. We automatically select the best algorithm, retrain periodically, and surface only the critical insights.',
-            features: [
-                'Zero configuration',
-                'Auto model selection & tuning',
-                'Continuous learning',
-                'Critical insights only'
-            ],
-            icon: Zap,
-            buttonText: 'Enable Autopilot',
-            isAutopilot: true
+            data.push(point);
+            if (isAnomaly) anomalies.push(point);
         }
-    ];
+
+        return { data, anomalies, anomalyCount };
+    };
+
+    const handleRunAnalysis = async () => {
+        if (jobStatus.status === 'running') return;
+
+        // Reset
+        setJobStatus({ id: '---', status: 'running' });
+        setChartData([]);
+        setTableData([]);
+        setResults({ totalPoints: 0, totalAnomalies: 0, anomalyPercentage: '0%' });
+
+        // Generate Job ID
+        const jobId = crypto.randomUUID();
+        setJobStatus(prev => ({ ...prev, id: jobId }));
+
+        // Simulate Processing Delay
+        setTimeout(() => {
+            const { data, anomalies, anomalyCount } = generateBatchData(150);
+
+            setChartData(data);
+
+            // Format Table Data
+            const tableRows = data.slice().reverse().map(point => ({
+                timestamp: point.timestamp,
+                status: point.isAnomaly ? 'Anomaly' : 'Normal',
+                score: point.score.toFixed(4)
+            }));
+            setTableData(tableRows);
+
+            // Update Results
+            setResults({
+                totalPoints: data.length,
+                totalAnomalies: anomalyCount,
+                anomalyPercentage: ((anomalyCount / data.length) * 100).toFixed(2) + '%'
+            });
+
+            setJobStatus(prev => ({ ...prev, status: 'completed' }));
+
+        }, 2000); // 2 seconds processing time
+    };
 
     return (
         <div className="analytics-page-root">
-            <AnimatePresence mode="wait">
-                {activeView === 'selection' ? (
-                    <motion.div
-                        key="selection"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="analytics-modes-grid"
+            <header className="analytics-header">
+                <div>
+                    <h1>Analytics</h1>
+                    <p>Run AI-powered analytics on your machine data</p>
+                </div>
+            </header>
+
+            {/* Analysis Configuration */}
+            <section className="analytics-section config-section">
+                <div className="section-header">
+                    <h2>Analysis Configuration</h2>
+                    <button className="btn-secondary" disabled={jobStatus.status !== 'completed'}>Export Results</button>
+                </div>
+
+                <div className="config-grid">
+                    <div className="form-group">
+                        <label>Machine</label>
+                        <div className="select-wrapper">
+                            <select
+                                value={config.machine}
+                                onChange={(e) => setConfig({ ...config, machine: e.target.value })}
+                                disabled={loadingDevices || jobStatus.status === 'running'}
+                            >
+                                {loadingDevices ? (
+                                    <option>Loading devices...</option>
+                                ) : (
+                                    devices.map(device => (
+                                        <option key={device.id} value={device.name}>
+                                            {device.name}
+                                        </option>
+                                    ))
+                                )}
+                            </select>
+                            <ChevronDown size={16} className="select-icon" />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Analysis Type</label>
+                        <div className="select-wrapper">
+                            <select
+                                value={config.analysisType}
+                                onChange={(e) => setConfig({ ...config, analysisType: e.target.value })}
+                                disabled={jobStatus.status === 'running'}
+                            >
+                                <option>Anomaly Detection</option>
+                                <option>Predictive Maintenance</option>
+                            </select>
+                            <ChevronDown size={16} className="select-icon" />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Model</label>
+                        <div className="select-wrapper">
+                            <select
+                                value={config.model}
+                                onChange={(e) => setConfig({ ...config, model: e.target.value })}
+                                disabled={jobStatus.status === 'running'}
+                            >
+                                <option>Isolation_forest</option>
+                                <option>Autoencoder</option>
+                            </select>
+                            <ChevronDown size={16} className="select-icon" />
+                        </div>
+                    </div>
+
+                    <div className="form-group">
+                        <label>Dataset</label>
+                        <div className="select-wrapper">
+                            <select
+                                value={config.dataset}
+                                onChange={(e) => setConfig({ ...config, dataset: e.target.value })}
+                                disabled={jobStatus.status === 'running'}
+                            >
+                                <option>datasets/D1/20260215_202604</option>
+                                <option>datasets/D1/20260214_180000</option>
+                            </select>
+                            <ChevronDown size={16} className="select-icon" />
+                        </div>
+                    </div>
+                </div>
+
+                <div className="action-row">
+                    <button
+                        className="btn-primary"
+                        onClick={handleRunAnalysis}
+                        disabled={jobStatus.status === 'running'}
                     >
-                        {modes.map((mode, i) => (
-                            <ModeCard
-                                key={i}
-                                {...mode}
-                                delay={0.2 + i * 0.15}
-                                onClick={(view) => setActiveView(view)}
-                            />
-                        ))}
-                    </motion.div>
-                ) : activeView === 'standard' ? (
-                    <StandardDashboard key="standard" onBack={() => setActiveView('selection')} />
-                ) : (
-                    <AutopilotDashboard key="autopilot" onBack={() => setActiveView('selection')} />
-                )}
-            </AnimatePresence>
+                        {jobStatus.status === 'running' ? (
+                            <>
+                                <Loader2 size={18} className="animate-spin" style={{ marginRight: '8px' }} />
+                                Running Analysis...
+                            </>
+                        ) : 'Run Analysis'}
+                    </button>
+                </div>
+            </section>
+
+            {/* Job Status */}
+            <section className="analytics-section job-status-section">
+                <h2>Job Status</h2>
+                <div className="job-details">
+                    <div className="job-id">
+                        <span className="label">Job ID:</span>
+                        <span className="value">{jobStatus.id}</span>
+                    </div>
+                    <div className="job-state">
+                        <span className="label">Status:</span>
+                        <div className={`status-badge-container ${jobStatus.status}`}>
+                            {jobStatus.status === 'running' && <Loader2 size={14} className="animate-spin" />}
+                            <span className={`status-badge ${jobStatus.status}`}>
+                                {jobStatus.status}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Analysis Results */}
+            <section className="analytics-section results-section">
+                <h2>Analysis Results</h2>
+
+                <div className="results-cards">
+                    <div className="result-card">
+                        <span className="card-label">Total points</span>
+                        <span className="card-value">{results.totalPoints}</span>
+                    </div>
+                    <div className="result-card">
+                        <span className="card-label">Total anomalies</span>
+                        <span className="card-value">{results.totalAnomalies}</span>
+                    </div>
+                    <div className="result-card">
+                        <span className="card-label">Anomaly percentage</span>
+                        <span className="card-value">{results.anomalyPercentage}</span>
+                    </div>
+                </div>
+
+                <div className="chart-wrapper-main">
+                    <h3>Anomaly Detection Results</h3>
+                    {chartData.length > 0 ? (
+                        <div style={{ width: '100%', height: '400px' }}>
+                            <AnomalyChart data={chartData} title="" />
+                        </div>
+                    ) : (
+                        <div className="empty-chart-state">
+                            {jobStatus.status === 'running' ? (
+                                <div className="loading-state">
+                                    <Loader2 size={32} className="animate-spin" />
+                                    <p>Analyzing dataset...</p>
+                                </div>
+                            ) : (
+                                <p>Select a configuration and run analysis to view results.</p>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="data-table-wrapper">
+                    <table className="analytics-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Status</th>
+                                <th>Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tableData.length > 0 ? (
+                                tableData.map((row, index) => (
+                                    <tr key={index} className="fade-in">
+                                        <td>{row.timestamp}</td>
+                                        <td>
+                                            <span className={`status-pill ${row.status.toLowerCase()}`}>
+                                                {row.status}
+                                            </span>
+                                        </td>
+                                        <td>{row.score}</td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="3" style={{ textAlign: 'center', padding: '2rem' }}>No analysis data available.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
         </div>
     );
 };
