@@ -1,9 +1,9 @@
 import { mockDevices } from '../data/mockDevices';
+import { auth, db } from '../config/firebase';
+import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, getDocs, doc, getDoc, query, where, setDoc } from 'firebase/firestore';
 
-// Mock Client Implementation
-const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Helper to get from storage or default
+// Helper to get from storage or default (Legacy for Rules until migrated)
 const getStorage = (key, defaultVal) => {
     const saved = localStorage.getItem(key);
     return saved ? JSON.parse(saved) : defaultVal;
@@ -14,8 +14,10 @@ const setStorage = (key, val) => {
     localStorage.setItem(key, JSON.stringify(val));
 };
 
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const api = {
-    // Equipment
+    // Equipment (Mock for now)
     getEquipment: async () => {
         await delay(500);
         return { data: mockDevices };
@@ -24,7 +26,6 @@ export const api = {
         await delay(300);
         const device = mockDevices.find(d => d.id === id || d.fullId === id);
         if (!device) throw new Error("Device not found");
-        // Add dummy telemetry to device for details page
         return {
             data: {
                 ...device,
@@ -57,7 +58,7 @@ export const api = {
         };
     },
 
-    // Rules
+    // Rules (LocalStorage for now)
     getRules: async () => {
         await delay(400);
         const rules = getStorage('factoryops_rules', []);
@@ -89,42 +90,151 @@ export const api = {
         return { data: { success: true } };
     },
 
-    // Users
+    // Users (Firestore)
     getUsers: async () => {
-        await delay(400);
-        return {
-            data: [
-                { id: 1, name: 'Manash Ray', email: 'manash.ray@cittagent.com', role: 'Admin', status: 'Active', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
-                { id: 2, name: 'Marcus Wong', email: 'marcus@factoryx.com', role: 'Operator', status: 'Active', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus' }
-            ]
-        };
+        try {
+            const querySnapshot = await getDocs(collection(db, "users"));
+            const users = [];
+            querySnapshot.forEach((doc) => {
+                users.push({ id: doc.id, ...doc.data() });
+            });
+            return { data: users };
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            // Fallback for demo
+            return {
+                data: [
+                    { id: 1, name: 'Manash Ray', email: 'manash.ray@cittagent.com', role: 'Admin', status: 'Active', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix' },
+                    { id: 2, name: 'Marcus Wong', email: 'marcus@factoryx.com', role: 'Operator', status: 'Active', avatar_url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus' }
+                ]
+            };
+        }
     },
 
-    // Authentication
+    // Authentication (Firebase)
     login: async (credentials) => {
-        await delay(800);
-        if (credentials.email === 'fail@test.com') {
-            throw { response: { data: { detail: 'Invalid credentials' } } };
-        }
+        try {
+            let userData = null;
 
+            // 1. Email/Password Login
+            if (credentials.email && credentials.password) {
+                const userCredential = await signInWithEmailAndPassword(auth, credentials.email, credentials.password);
+                const user = userCredential.user;
 
-        // Generate name from email
-        const namePart = credentials.email.split('@')[0];
-        const formattedName = namePart
-            .split(/[._]/) // Split by . or _
-            .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-            .join(' ');
-
-        return {
-            data: {
-                id: 1,
-                name: formattedName,
-                email: credentials.email,
-                role: 'Administrator',
-                token: 'mock-jwt-token-123',
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${namePart}`
+                // Fetch extra user details from Firestore
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    userData = { id: user.uid, ...userDoc.data() };
+                } else {
+                    // Fallback if no firestore doc exists yet
+                    userData = {
+                        id: user.uid,
+                        email: user.email,
+                        name: user.displayName || user.email.split('@')[0],
+                        role: 'User',
+                        avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=random`
+                    };
+                }
             }
-        };
+            // 2. PIN Login (Mock implementation for now connecting to Firestore)
+            // PRD Requirement: PIN based login by looking up employee ID
+            // In a real app, this would be a cloud function to verify PIN securely.
+            else if (credentials.employeeId && credentials.pin) {
+                const q = query(collection(db, "users"), where("employeeId", "==", credentials.employeeId));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    throw { response: { data: { detail: 'Invalid Employee ID' } } };
+                }
+
+                let foundUser = null;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    // START VERY INSECURE: Checking plain text PIN on client side for MVP demo
+                    // TODO: Move to Cloud Function
+                    if (String(data.pin) === String(credentials.pin)) {
+                        foundUser = { id: doc.id, ...data };
+                    }
+                });
+
+                if (!foundUser) {
+                    throw { response: { data: { detail: 'Invalid PIN' } } };
+                }
+                userData = foundUser;
+            } else {
+                throw { response: { data: { detail: 'Missing credentials' } } };
+            }
+
+            return { data: userData };
+
+        } catch (error) {
+            console.error("Firebase Login Error:", error);
+            // Map Firebase errors to user friendly messages
+            let msg = 'Login failed';
+            if (error.code === 'auth/invalid-credential') msg = 'Invalid email or password';
+            if (error.code === 'auth/user-not-found') msg = 'User not found';
+            if (error.code === 'auth/wrong-password') msg = 'Incorrect password';
+            if (error.response?.data?.detail) msg = error.response.data.detail;
+
+            throw { response: { data: { detail: msg } } };
+        }
+    },
+
+    // Register (Firebase)
+    register: async (userData) => {
+        console.log("Starting registration for:", userData.email);
+        try {
+            // 1. Create Auth User
+            console.log("Calling createUserWithEmailAndPassword...");
+            const { email, password, name, org, role = 'Worker' } = userData;
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            console.log("User created in Auth:", userCredential.user.uid);
+            const user = userCredential.user;
+
+            // 2. Create User Profile in Firestore
+            const newProfile = {
+                name,
+                email,
+                org,
+                role,
+                status: 'Active',
+                createdAt: new Date().toISOString(),
+                avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random`
+            };
+
+            console.log("Saving profile to Firestore...");
+            await setDoc(doc(db, "users", user.uid), newProfile);
+            console.log("Profile saved successfully.");
+
+            // Force sign out so user has to log in manually
+            await signOut(auth);
+
+            return {
+                data: {
+                    id: user.uid,
+                    ...newProfile,
+                    token: await user.getIdToken()
+                }
+            };
+
+        } catch (error) {
+            console.error("Firebase Registration Error Details:", error);
+            let msg = 'Registration failed';
+            if (error.code === 'auth/email-already-in-use') msg = 'Email already in use';
+            if (error.code === 'auth/weak-password') msg = 'Password is too weak';
+            if (error.code === 'auth/network-request-failed') msg = 'Network error. Check your connection.';
+            throw { response: { data: { detail: msg + ` (${error.code})` } } };
+        }
+    },
+
+    logout: async () => {
+        try {
+            await signOut(auth);
+            return { success: true }
+        } catch (error) {
+            console.error("Logout failed", error);
+            throw error;
+        }
     },
 
     // Chatbot

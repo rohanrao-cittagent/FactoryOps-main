@@ -7,43 +7,46 @@ import UserModal from '../components/Users/UserModal';
 import { useNotification } from '../context/NotificationContext';
 import './Users.css';
 
-const INITIAL_USERS = [
-    { id: 1, name: 'Sarah Chen', email: 'sarah@cittagent.com', role: 'Admin', lastActive: '2 min ago', status: 'Active', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah' },
-    { id: 2, name: 'Marcus Wong', email: 'marcus@factoryx.com', role: 'Operator', lastActive: '1 hour ago', status: 'Active', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Marcus' },
-    { id: 3, name: 'Alex Rodriguez', email: 'alex@manufacture.com', role: 'Viewer', lastActive: '2 days ago', status: 'Active', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Alex' },
-    { id: 4, name: 'James Wilson', email: 'james@cittagent.com', role: 'Admin', lastActive: '1 week ago', status: 'Inactive', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=James' },
-];
+
+
+import { api } from '../api/client';
 
 const Users = () => {
     const { addNotification } = useNotification();
     const [users, setUsers] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    useEffect(() => {
-        const savedUsers = localStorage.getItem('factoryops_users');
-        if (savedUsers) {
-            setUsers(JSON.parse(savedUsers));
-        } else {
-            setUsers(INITIAL_USERS);
-            localStorage.setItem('factoryops_users', JSON.stringify(INITIAL_USERS));
+    const fetchUsers = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.getUsers();
+            setUsers(response.data);
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+        } finally {
+            setIsLoading(false);
         }
-    }, []);
-
-    const saveUsers = (newUsers) => {
-        setUsers(newUsers);
-        localStorage.setItem('factoryops_users', JSON.stringify(newUsers));
     };
 
-    const handleAddUser = (userData) => {
+    useEffect(() => {
+        fetchUsers();
+    }, []);
+
+    const handleAddUser = async (userData) => {
+        // Since we don't have an admin invite API yet, we'll just mock add to UI
+        // In reality, this would trigger an email invite or cloud function
         const newUser = {
             ...userData,
-            id: Date.now(),
+            id: Date.now().toString(), // Temp ID
             lastActive: 'Just now',
             status: 'Active',
             avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userData.name}`
         };
-        saveUsers([...users, newUser]);
+
+        // Optimistic update
+        setUsers(prev => [...prev, newUser]);
 
         addNotification(
             'User Invited',
@@ -57,7 +60,7 @@ const Users = () => {
     const handleDeleteUser = (id) => {
         if (window.confirm('Are you sure you want to delete this user?')) {
             const updatedUsers = users.filter(u => u.id !== id);
-            saveUsers(updatedUsers);
+            setUsers(updatedUsers);
         }
     };
 
@@ -80,7 +83,11 @@ const Users = () => {
             accessor: 'name',
             render: (name, row) => (
                 <div className="user-cell">
-                    <img src={row.avatar} alt={name} className="user-avatar-img" />
+                    <img
+                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&bold=true`}
+                        alt={name}
+                        className="user-avatar-img"
+                    />
                     <div className="user-info-text">
                         <span className="user-name-text">{name}</span>
                         <span className="user-email-text">{row.email}</span>

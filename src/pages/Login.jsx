@@ -12,7 +12,7 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    // const { showToast } = useToast(); // If Toast context is available
+    const { showToast, ToastContainer } = useToast();
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -23,11 +23,16 @@ const Login = () => {
             const user = response.data;
 
             localStorage.setItem('factoryops_user', JSON.stringify(user));
-            // showToast(`Welcome back, ${user.name}`, 'success');
-            navigate('/dashboard');
+            showToast(`Welcome back, ${user.name}`, 'success');
+
+            // Delary navigation slightly to show toast
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1000);
+
         } catch (error) {
             console.error('Login failed:', error);
-            alert('Login Failed: ' + (error.response?.data?.detail || 'Invalid credentials'));
+            showToast(error.response?.data?.detail || 'Invalid credentials', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -35,6 +40,7 @@ const Login = () => {
 
     return (
         <div className="auth-page-container">
+            <ToastContainer />
             <motion.div
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}

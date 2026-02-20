@@ -2,14 +2,17 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Building, UserPlus, Github, Chrome, Factory } from 'lucide-react';
-import './Auth.css';
+import { api } from '../api/client';
+import { useToast } from '../components/Shared/Toast';
 
 const Signup = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    const { showToast, ToastContainer } = useToast();
     const [formData, setFormData] = useState({
         name: '',
         org: '',
+        role: 'Worker', // Default
         email: '',
         password: ''
     });
@@ -21,25 +24,35 @@ const Signup = () => {
         });
     };
 
-    const handleSignup = (e) => {
+    const handleSignup = async (e) => {
         e.preventDefault();
         setIsLoading(true);
 
-        // Mock signup delay
-        setTimeout(() => {
-            localStorage.setItem('factoryops_user', JSON.stringify({
-                name: formData.name,
-                email: formData.email,
-                role: 'Administrator',
-                org: formData.org
-            }));
+        try {
+            const response = await api.register(formData);
+            const user = response.data;
+
+            // Do not auto-login. Force user to sign in manually.
+            // localStorage.setItem('factoryops_user', JSON.stringify(user));
+
+            showToast('Account created successfully! Redirecting to login...', 'success');
+
+            setTimeout(() => {
+                navigate('/login');
+            }, 1500);
+
+        } catch (error) {
+            console.error("Signup error:", error);
+            showToast(error.response?.data?.detail || error.message, 'error');
+        } finally {
             setIsLoading(false);
-            navigate('/');
-        }, 1500);
+
+        }
     };
 
     return (
         <div className="auth-page-container">
+            <ToastContainer />
             <motion.div
                 initial={{ x: -100, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
@@ -102,6 +115,32 @@ const Signup = () => {
                                     onChange={handleChange}
                                     required
                                 />
+                            </div>
+                        </div>
+
+                        <div className="auth-input-group">
+                            <label>Role</label>
+                            <div className="role-selection-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '5px' }}>
+                                {['Admin', 'Worker', 'Viewer', 'Tester'].map((r) => (
+                                    <div
+                                        key={r}
+                                        onClick={() => setFormData({ ...formData, role: r })}
+                                        style={{
+                                            padding: '10px',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${formData.role === r ? '#3b82f6' : '#cbd5e1'}`,
+                                            background: formData.role === r ? '#bfdbfe' : '#f8fafc',
+                                            color: formData.role === r ? '#1e3a8a' : '#334155',
+                                            textAlign: 'center',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: '500',
+                                            transition: 'all 0.2s'
+                                        }}
+                                    >
+                                        {r}
+                                    </div>
+                                ))}
                             </div>
                         </div>
 

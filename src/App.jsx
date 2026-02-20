@@ -28,6 +28,14 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+const PublicRoute = ({ children }) => {
+  const user = localStorage.getItem('factoryops_user');
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+};
+
 const PageWrapper = ({ children, title }) => {
   return (
     <motion.div
@@ -50,8 +58,8 @@ const AnimatedRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
+        <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+        <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
 
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/dashboard" element={<ProtectedRoute><PageWrapper title="Dashboard Control"><Dashboard /></PageWrapper></ProtectedRoute>} />
