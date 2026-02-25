@@ -43,14 +43,35 @@ const PerformanceChart = ({ data, title, dataKey, color = "#3b82f6" }) => {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fill: '#64748b', fontSize: 12 }}
-                            domain={dataKey === 'efficiency' ? [0, 100] : ['auto', 'auto']}
+                            domain={
+                                dataKey === 'efficiency' || dataKey === 'healthScore' ? [0, 100] :
+                                    dataKey === 'uptime' ? [90, 100] :
+                                        ['auto', 'auto']
+                            }
+                            tickFormatter={(value) => {
+                                if (dataKey === 'revenueImpact') return `$${value}`;
+                                if (dataKey === 'powerWastage') return `${value}kW`;
+                                return value;
+                            }}
                         />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                backgroundColor: 'rgba(1, 4, 15, 0.95)',
                                 border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: '8px',
-                                color: '#fff'
+                                borderRadius: '12px',
+                                color: '#fff',
+                                backdropFilter: 'blur(10px)'
+                            }}
+                            formatter={(value) => {
+                                const labels = {
+                                    efficiency: ['Efficiency', '%'],
+                                    healthScore: ['Health Score', '%'],
+                                    uptime: ['Uptime', '%'],
+                                    powerWastage: ['Power Wastage', 'kW'],
+                                    revenueImpact: ['Revenue Impact', '$/hr']
+                                };
+                                const config = labels[dataKey] || [dataKey, ''];
+                                return [`${value}${config[1]}`, config[0]];
                             }}
                         />
                         <Area

@@ -14,35 +14,45 @@ import {
     Loader2,
     AlertCircle,
     Shield,
+    Heart,
+    Clock,
+    Droplets,
+    Battery,
     Play,
     Pause,
     Plus
 } from 'lucide-react';
 import PerformanceChart from '../components/Analytics/PerformanceChart';
 import RuleModal from '../components/Rules/RuleModal';
+import MetricDetailOverlay from '../components/Dashboard/MetricDetailOverlay';
 import { useToast } from '../components/Shared/Toast';
 import { NotificationService } from '../services/NotificationService';
 import { mockDevices } from '../data/mockDevices';
 import './DeviceDetails.css';
 
-const MetricCard = ({ title, value, unit, icon: Icon, min, max, optimal, percent }) => (
-    <div className="metric-status-card glass-card">
+const MetricCard = ({ title, value, unit, icon: Icon, min, max, optimal, percent, onClick }) => (
+    <div className="metric-status-card glass-card" onClick={onClick} style={{ cursor: 'pointer' }}>
         <div className="m-card-header">
             <div className="m-title-group">
-                <Icon size={18} className="m-icon" />
+                <Icon size={16} className="m-icon" />
                 <span className="m-label">{title.toUpperCase()}</span>
             </div>
             <span className="m-value">{value}<span className="m-unit">{unit}</span></span>
         </div>
         <div className="m-status-bar-container">
             <div className="m-status-bar-bg">
-                <div className="m-status-bar-fill" style={{ width: `${percent || 0}%` }}></div>
+                <motion.div
+                    className="m-status-bar-fill"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percent || 0}%` }}
+                    transition={{ duration: 1, ease: "easeOut" }}
+                ></motion.div>
                 <div className="m-status-marker" style={{ left: '80%' }}></div>
             </div>
             <div className="m-range-labels">
                 <span>MIN: {min || 0}</span>
                 <span>MAX: {max || 100}</span>
-                <span className="optimal-tag">OPTIMAL: {optimal || 50}</span>
+                <span className="optimal-tag">OPTIMAL: {optimal || 'N/A'}</span>
             </div>
         </div>
     </div>
@@ -60,6 +70,7 @@ const DeviceDetails = () => {
     const [appliedRules, setAppliedRules] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingRule, setEditingRule] = useState(null);
+    const [selectedMetricView, setSelectedMetricView] = useState(null);
     const { showToast, ToastContainer } = useToast();
 
     const loadFilteredRules = (foundDevice) => {
@@ -98,12 +109,19 @@ const DeviceDetails = () => {
             const foundDevice = mockDevices.find(d => d.id === id);
             if (foundDevice) {
                 // Initialize with some historical data
-                const initialTelemetry = Array.from({ length: 10 }).map((_, i) => {
-                    const time = new Date(Date.now() - (10 - i) * 3000);
+                const initialTelemetry = Array.from({ length: 15 }).map((_, i) => {
+                    const time = new Date(Date.now() - (15 - i) * 3000);
                     return {
                         timestamp: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                         efficiency: Math.floor(70 + Math.random() * 20),
-                        vibration: Number((2 + Math.random() * 3).toFixed(1))
+                        healthScore: Math.floor(85 + Math.random() * 10),
+                        uptime: Number((99.5 + Math.random() * 0.4).toFixed(1)),
+                        powerWastage: Number((Math.random() * 0.5).toFixed(2)),
+                        revenueImpact: Number((Math.random() * 50).toFixed(2)),
+                        pressure: Number((foundDevice.metrics?.pressure?.value || 120 + (Math.random() * 10 - 5)).toFixed(1)),
+                        temperature: Number((foundDevice.metrics?.temperature?.value || 80 + (Math.random() * 10 - 5)).toFixed(1)),
+                        vibration: Number((foundDevice.metrics?.vibration?.value || 2 + (Math.random() * 1)).toFixed(2)),
+                        power: Number((foundDevice.metrics?.power?.value || 3.5 + (Math.random() * 0.5)).toFixed(2))
                     };
                 });
 
@@ -130,36 +148,51 @@ const DeviceDetails = () => {
 
                 // Simulate metric fluctuations
                 const updatedMetrics = { ...prev.metrics };
+                const fluctuate = (val, range, decimals = 1) => Number((val + (Math.random() - 0.5) * range).toFixed(decimals));
+
                 if (updatedMetrics.pressure) {
-                    const change = (Math.random() - 0.5) * 2;
-                    updatedMetrics.pressure.value = Number((updatedMetrics.pressure.value + change).toFixed(1));
-                    updatedMetrics.pressure.percent = Math.min(100, Math.max(0, updatedMetrics.pressure.percent + (change * 2)));
+                    updatedMetrics.pressure.value = fluctuate(updatedMetrics.pressure.value, 1.5);
+                    updatedMetrics.pressure.percent = Math.min(100, Math.max(0, updatedMetrics.pressure.percent + (Math.random() - 0.5) * 2));
                 }
                 if (updatedMetrics.temperature) {
-                    const change = (Math.random() - 0.5) * 1.5;
-                    updatedMetrics.temperature.value = Number((updatedMetrics.temperature.value + change).toFixed(1));
-                    updatedMetrics.temperature.percent = Math.min(100, Math.max(0, updatedMetrics.temperature.percent + (change * 1.5)));
+                    updatedMetrics.temperature.value = fluctuate(updatedMetrics.temperature.value, 1.2);
+                    updatedMetrics.temperature.percent = Math.min(100, Math.max(0, updatedMetrics.temperature.percent + (Math.random() - 0.5) * 1.5));
                 }
                 if (updatedMetrics.vibration) {
-                    const change = (Math.random() - 0.5) * 0.4;
-                    updatedMetrics.vibration.value = Number((updatedMetrics.vibration.value + change).toFixed(2));
-                    updatedMetrics.vibration.percent = Math.min(100, Math.max(0, updatedMetrics.vibration.percent + (change * 10)));
+                    updatedMetrics.vibration.value = fluctuate(updatedMetrics.vibration.value, 0.1, 2);
+                    updatedMetrics.vibration.percent = Math.min(100, Math.max(0, updatedMetrics.vibration.percent + (Math.random() - 0.5) * 3));
                 }
                 if (updatedMetrics.power) {
-                    const change = (Math.random() - 0.5) * 0.2;
-                    updatedMetrics.power.value = Number((updatedMetrics.power.value + change).toFixed(2));
-                    updatedMetrics.power.percent = Math.min(100, Math.max(0, updatedMetrics.power.percent + (change * 5)));
+                    updatedMetrics.power.value = fluctuate(updatedMetrics.power.value, 0.2, 1);
+                    updatedMetrics.power.percent = Math.min(100, Math.max(0, updatedMetrics.power.percent + (Math.random() - 0.5) * 2));
                 }
+
+                // New simulated fields if not in original mock
+                if (!updatedMetrics.oil) updatedMetrics.oil = { value: 0.85, unit: 'LPI', min: 0.5, max: 2.0, optimal: '1.2', percent: 65 };
+                updatedMetrics.oil.value = fluctuate(updatedMetrics.oil.value, 0.05, 2);
+                updatedMetrics.oil.percent = Math.min(100, Math.max(20, updatedMetrics.oil.percent + (Math.random() - 0.5) * 1));
+
+                if (!updatedMetrics.energy) updatedMetrics.energy = { value: 452, unit: 'kWh', min: 200, max: 800, optimal: '400', percent: 55 };
+                updatedMetrics.energy.value = fluctuate(updatedMetrics.energy.value, 10, 0);
+                updatedMetrics.energy.percent = Math.min(100, Math.max(10, updatedMetrics.energy.percent + (Math.random() - 0.5) * 0.5));
 
                 return { ...prev, metrics: updatedMetrics };
             });
 
             setTelemetry(prev => {
                 const now = new Date();
+                const last = prev[prev.length - 1];
                 const newEntry = {
                     timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                     efficiency: Math.floor(75 + Math.random() * 15),
-                    vibration: Number((device.metrics?.vibration?.value || 3).toFixed(2))
+                    healthScore: Math.floor(90 + (Math.random() - 0.5) * 5),
+                    uptime: Number((99.6 + (Math.random() - 0.5) * 0.2).toFixed(1)),
+                    powerWastage: Number((Math.max(0, (last?.powerWastage || 0.2) + (Math.random() - 0.5) * 0.1)).toFixed(2)),
+                    revenueImpact: Number((Math.max(0, (last?.revenueImpact || 20) + (Math.random() - 0.5) * 5)).toFixed(2)),
+                    pressure: device.metrics?.pressure?.value || 117.8,
+                    temperature: device.metrics?.temperature?.value || 96,
+                    vibration: device.metrics?.vibration?.value || 2.58,
+                    power: device.metrics?.power?.value || 4.5
                 };
 
                 // Keep last 15 entries
@@ -224,10 +257,14 @@ const DeviceDetails = () => {
         ? telemetry.map((t) => ({
             name: t.timestamp,
             efficiency: t.efficiency || 0,
+            healthScore: t.healthScore || 0,
+            uptime: t.uptime || 0,
+            powerWastage: t.powerWastage || 0,
+            revenueImpact: t.revenueImpact || 0,
             vibration: t.vibration || 0
         }))
         : [
-            { name: 'Waiting...', efficiency: 0, vibration: 0 },
+            { name: 'Waiting...', efficiency: 0, healthScore: 0, uptime: 0, powerWastage: 0, revenueImpact: 0, vibration: 0 },
         ];
 
     if (loading) {
@@ -314,29 +351,68 @@ const DeviceDetails = () => {
                 {/* Metrics Grid */}
                 <section className="metrics-summary-grid">
                     <MetricCard
+                        title="Equipment Health Score"
+                        value={device.health || 92}
+                        unit="%"
+                        icon={Shield}
+                        min={0} max={100} optimal="90+"
+                        percent={device.health}
+                    />
+                    <MetricCard
+                        title="Uptime & Availability"
+                        value={99.8}
+                        unit="%"
+                        icon={Clock}
+                        min={95} max={100} optimal="99.5+"
+                        percent={99}
+                    />
+                    <MetricCard
                         title="Pressure (PSI)"
-                        value={device.metrics?.pressure?.value || 0}
+                        value={device.metrics?.pressure?.value || 117.8}
+                        unit="PSI"
                         icon={Gauge}
                         {...device.metrics?.pressure}
+                        onClick={() => setSelectedMetricView({ title: 'Pressure', ...device.metrics?.pressure })}
                     />
                     <MetricCard
                         title="Temperature (°C)"
-                        value={device.metrics?.temperature?.value || 0}
+                        value={device.metrics?.temperature?.value || 96}
+                        unit="°C"
                         icon={Thermometer}
                         {...device.metrics?.temperature}
+                        onClick={() => setSelectedMetricView({ title: 'Temperature', ...device.metrics?.temperature })}
                     />
                     <MetricCard
-                        title="Vibration (MM/S)"
-                        value={device.metrics?.vibration?.value || 0}
-                        icon={Activity}
-                        {...device.metrics?.vibration}
-                    />
-                    <MetricCard
-                        title="Power Consumption"
-                        value={device.metrics?.power?.value || 0}
+                        title="Power & Motor Load"
+                        value={device.metrics?.power?.value || 4.5}
                         unit="kW"
                         icon={Zap}
                         {...device.metrics?.power}
+                        onClick={() => setSelectedMetricView({ title: 'Power Consumption', ...device.metrics?.power })}
+                    />
+                    <MetricCard
+                        title="Oil Condition"
+                        value={0.85}
+                        unit="LPI"
+                        icon={Droplets}
+                        min={0.5} max={2.0} optimal="1.2"
+                        percent={65}
+                    />
+                    <MetricCard
+                        title="Vibration (MM/S)"
+                        value={device.metrics?.vibration?.value || 2.58}
+                        unit="MM/S"
+                        icon={Activity}
+                        {...device.metrics?.vibration}
+                        onClick={() => setSelectedMetricView({ title: 'Vibration', ...device.metrics?.vibration })}
+                    />
+                    <MetricCard
+                        title="Energy Consumption"
+                        value={452}
+                        unit="kWh"
+                        icon={Battery}
+                        min={200} max={800} optimal="400"
+                        percent={55}
                     />
                 </section>
 
@@ -346,7 +422,7 @@ const DeviceDetails = () => {
                             <h3>Performance Trends</h3>
                             <span className="subtext">(Recent Telemetry)</span>
                         </div>
-                        <div className="metric-toggle-group">
+                        <div className="metric-toggle-group scrollable">
                             <button
                                 className={`toggle-tab ${activeMetric === 'efficiency' ? 'active' : ''}`}
                                 onClick={() => setActiveMetric('efficiency')}
@@ -354,10 +430,28 @@ const DeviceDetails = () => {
                                 Efficiency
                             </button>
                             <button
-                                className={`toggle-tab ${activeMetric === 'vibration' ? 'active' : ''}`}
-                                onClick={() => setActiveMetric('vibration')}
+                                className={`toggle-tab ${activeMetric === 'healthScore' ? 'active' : ''}`}
+                                onClick={() => setActiveMetric('healthScore')}
                             >
-                                Vibration
+                                Health
+                            </button>
+                            <button
+                                className={`toggle-tab ${activeMetric === 'uptime' ? 'active' : ''}`}
+                                onClick={() => setActiveMetric('uptime')}
+                            >
+                                Uptime
+                            </button>
+                            <button
+                                className={`toggle-tab ${activeMetric === 'powerWastage' ? 'active' : ''}`}
+                                onClick={() => setActiveMetric('powerWastage')}
+                            >
+                                Wastage
+                            </button>
+                            <button
+                                className={`toggle-tab ${activeMetric === 'revenueImpact' ? 'active' : ''}`}
+                                onClick={() => setActiveMetric('revenueImpact')}
+                            >
+                                Revenue
                             </button>
                         </div>
                     </div>
@@ -367,7 +461,13 @@ const DeviceDetails = () => {
                             data={chartData}
                             title=""
                             dataKey={activeMetric}
-                            color={activeMetric === 'efficiency' ? "var(--accent-primary)" : "#f87171"}
+                            color={
+                                activeMetric === 'efficiency' ? "#6366f1" :
+                                    activeMetric === 'healthScore' ? "#10b981" :
+                                        activeMetric === 'uptime' ? "#f59e0b" :
+                                            activeMetric === 'powerWastage' ? "#f43f5e" :
+                                                "#a855f7"
+                            }
                         />
                     </div>
                 </section>
@@ -487,6 +587,14 @@ const DeviceDetails = () => {
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleSaveRule}
                     editingRule={editingRule}
+                />
+
+                <MetricDetailOverlay
+                    isOpen={!!selectedMetricView}
+                    onClose={() => setSelectedMetricView(null)}
+                    metric={selectedMetricView}
+                    deviceName={device.name}
+                    history={telemetry}
                 />
 
                 <ToastContainer />
