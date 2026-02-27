@@ -357,6 +357,7 @@ const DeviceDetails = () => {
                         icon={Shield}
                         min={0} max={100} optimal="90+"
                         percent={device.health}
+                        onClick={() => setSelectedMetricView({ title: 'Equipment Health Score', value: device.health || 92, unit: '%', min: 0, max: 100, optimal: '90+', percent: device.health })}
                     />
                     <MetricCard
                         title="Uptime & Availability"
@@ -365,6 +366,7 @@ const DeviceDetails = () => {
                         icon={Clock}
                         min={95} max={100} optimal="99.5+"
                         percent={99}
+                        onClick={() => setSelectedMetricView({ title: 'Uptime & Availability', value: 99.8, unit: '%', min: 95, max: 100, optimal: '99.5+', percent: 99 })}
                     />
                     <MetricCard
                         title="Pressure (PSI)"
@@ -397,6 +399,7 @@ const DeviceDetails = () => {
                         icon={Droplets}
                         min={0.5} max={2.0} optimal="1.2"
                         percent={65}
+                        onClick={() => setSelectedMetricView({ title: 'Oil Condition', value: 0.85, unit: 'LPI', min: 0.5, max: 2.0, optimal: '1.2', percent: 65 })}
                     />
                     <MetricCard
                         title="Vibration (MM/S)"
@@ -413,6 +416,7 @@ const DeviceDetails = () => {
                         icon={Battery}
                         min={200} max={800} optimal="400"
                         percent={55}
+                        onClick={() => setSelectedMetricView({ title: 'Energy Consumption', value: 452, unit: 'kWh', min: 200, max: 800, optimal: '400', percent: 55 })}
                     />
                 </section>
 

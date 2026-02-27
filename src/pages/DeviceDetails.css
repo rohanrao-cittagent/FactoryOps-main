@@ -616,3 +616,94 @@
     font-size: 0.95rem;
     font-weight: 500;
 }
+
+/* ═══════════════════════════════════════
+   LIGHT MODE OVERRIDES
+   ═══════════════════════════════════════ */
+
+/* Metric cards */
+:root.light .metric-status-card {
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(99, 102, 241, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+:root.light .metric-status-card:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+}
+
+:root.light .m-icon {
+    color: rgba(15, 23, 42, 0.4);
+}
+
+:root.light .m-label {
+    color: rgba(15, 23, 42, 0.5);
+}
+
+:root.light .m-value {
+    color: #0f172a;
+}
+
+:root.light .m-unit {
+    color: rgba(15, 23, 42, 0.5);
+}
+
+:root.light .m-status-bar-bg {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+:root.light .m-range-labels {
+    color: rgba(15, 23, 42, 0.4);
+}
+
+:root.light .optimal-tag {
+    color: rgba(15, 23, 42, 0.45);
+    background: rgba(0, 0, 0, 0.04);
+}
+
+/* Device info panel */
+:root.light .device-info-panel {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.07) !important;
+}
+
+:root.light .spec-value {
+    color: #1e293b;
+}
+
+:root.light .spec-label {
+    color: rgba(15, 23, 42, 0.45);
+}
+
+/* Performance chart toggle */
+:root.light .metric-toggle-group {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+:root.light .toggle-tab {
+    color: #334155;
+}
+
+/* Hub buttons */
+:root.light .hub-btn {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+}
+
+:root.light .hub-btn:hover {
+    background: rgba(255, 255, 255, 1);
+}
+
+/* Section headings that use hardcoded white */
+:root.light .section-title-row h3,
+:root.light .metrics-section h3 {
+    color: #1e293b;
+}
+
+/* Overlay backdrop for light mode — keep dark enough to see the modal */
+:root.light .mo-overlay {
+    background: rgba(15, 23, 42, 0.5);
+}

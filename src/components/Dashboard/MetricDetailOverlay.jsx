@@ -8,7 +8,6 @@ const MetricDetailOverlay = ({ isOpen, onClose, metric, deviceName, history }) =
 
     const isTemperature = (metric.title || '').toLowerCase().includes('temperature');
 
-    // Preparation for Trend Data
     const titleToKey = {
         'Pressure (PSI)': 'pressure',
         'Temperature (°C)': 'temperature',
@@ -22,208 +21,304 @@ const MetricDetailOverlay = ({ isOpen, onClose, metric, deviceName, history }) =
         value: entry[dataKey]
     }));
 
-    // Data for units and conversions
     const primaryValue = metric.value || 0;
     const isCelsius = (metric.unit || '°C').includes('°C');
-    const convValue = isCelsius ? (primaryValue * 1.8 + 32).toFixed(1) : ((primaryValue - 32) / 1.8).toFixed(1);
-    const convLabel = isCelsius ? '°F' : '°C';
+    const convValue = isCelsius
+        ? (primaryValue * 1.8 + 32).toFixed(1)
+        : ((primaryValue - 32) / 1.8).toFixed(1);
 
-    const getLabels = () => {
+    const getConfig = () => {
         const title = (metric.title || '').toLowerCase();
-        if (title.includes('pressure')) return { primary: 'DISCHARGE', secondary: 'INTERSTAGE', unit: 'PSI', convLabel: 'bar', rangeMax: 150 };
-        if (title.includes('temperature')) return { primary: 'STAGE 2 DISCHARGE (T3)', secondary: 'AMBIENT', unit: '°C', convLabel: '°F', rangeMax: 100 };
-        if (title.includes('vibration')) return { primary: 'AXIAL', secondary: 'RADIAL', unit: 'mm/s', convLabel: 'in/s', rangeMax: 5 };
-        return { primary: 'LOAD', secondary: 'BUFFER', unit: 'kW', convLabel: 'kVA', rangeMax: 200 };
+        if (title.includes('pressure')) return { primary: 'DISCHARGE PRESSURE', secondary: 'INTERSTAGE', unit: 'PSI', conv: 'bar', color: '#6366f1', rangeMax: 150 };
+        if (title.includes('temperature')) return { primary: 'STAGE 2 DISCHARGE (T3)', secondary: 'AMBIENT', unit: '°C', conv: '°F', color: '#f97316', rangeMax: 100 };
+        if (title.includes('vibration')) return { primary: 'AXIAL VIBRATION', secondary: 'RADIAL', unit: 'mm/s', conv: 'in/s', color: '#10b981', rangeMax: 5 };
+        if (title.includes('power')) return { primary: 'MOTOR LOAD', secondary: 'BUFFER', unit: 'kW', conv: 'kVA', color: '#a855f7', rangeMax: 20 };
+        if (title.includes('oil')) return { primary: 'OIL QUALITY INDEX', secondary: 'VISCOSITY', unit: 'LPI', conv: '', color: '#f59e0b', rangeMax: 2 };
+        if (title.includes('energy')) return { primary: 'ENERGY DRAW', secondary: 'PEAK', unit: 'kWh', conv: '', color: '#06b6d4', rangeMax: 800 };
+        if (title.includes('health')) return { primary: 'HEALTH SCORE', secondary: 'BASELINE', unit: '%', conv: '', color: '#4ade80', rangeMax: 100 };
+        if (title.includes('uptime')) return { primary: 'SYSTEM UPTIME', secondary: 'TARGET', unit: '%', conv: '', color: '#38bdf8', rangeMax: 100 };
+        return { primary: 'PRIMARY', secondary: 'SECONDARY', unit: metric.unit || '', conv: '', color: '#3b82f6', rangeMax: 200 };
     };
+    const cfg = getConfig();
 
-    const config = getLabels();
-
-    // Render specialized Temperature Console
+    /* ── Temperature Console ── */
     const renderTemperatureConsole = () => {
-        const t1 = 142;
-        const t2 = 48;
-        const deltaT = t1 - t2;
-
+        const t1 = 142, t2 = 48, deltaT = t1 - t2;
         return (
-            <div className="temp-console-layout">
-                {/* Header Section */}
-                <div className="ind-header temp-header">
-                    <div className="ind-status-group">
-                        <span className="temp-therm-icon">🌡️</span>
-                        <span className="ind-title-text">TEMPERATURE</span>
-                        <span className="ind-dash">—</span>
-                        <span className="ind-device-text">Anest Iwata HLT 200</span>
+            <div className="mo-temp">
+                <div className="mo-hdr">
+                    <div className="mo-hdr-left">
+                        <div className="mo-live-dot" style={{ background: '#f97316', boxShadow: '0 0 10px rgba(249,115,22,0.7)' }} />
+                        <span className="mo-hdr-title">TEMPERATURE</span>
+                        <span className="mo-hdr-sep">—</span>
+                        <span className="mo-hdr-sub">{deviceName}</span>
                     </div>
-                    <div className="temp-unit-toggle">[ °C | °F ]</div>
-                    <button className="ind-close-icon" onClick={onClose}>×</button>
-                </div>
-
-                {/* Main Readout Section */}
-                <div className="temp-main-section">
-                    <div className="temp-primary-row">
-                        <span className="temp-label">PRIMARY — Stage 2 Discharge (T3)</span>
-                    </div>
-
-                    <div className="temp-readout-box">
-                        <div className="temp-readout-value">
-                            <div className="temp-dot-indicator active"></div>
-                            <span className="temp-val-big">{primaryValue}°C</span>
-                            <span className="temp-val-small">({convValue}°F)</span>
-                        </div>
-
-                        <div className="temp-multi-bar">
-                            <div className="temp-bar-segments">
-                                <div className="temp-segment normal"></div>
-                                <div className="temp-segment warn"></div>
-                                <div className="temp-segment critical"></div>
-                                <motion.div
-                                    className="temp-bar-cursor"
-                                    initial={{ left: 0 }}
-                                    animate={{ left: `${Math.min((primaryValue / 100) * 100, 100)}%` }}
-                                    transition={{ duration: 1 }}
-                                ></motion.div>
-                            </div>
-                            <div className="temp-bar-labels">
-                                <span>0°C</span>
-                                <span>40°C</span>
-                                <span>75°C</span>
-                                <span>90°C</span>
-                            </div>
-                            <div className="temp-state-labels">
-                                <span className="state-normal">[Normal]</span>
-                                <span className="state-warn">[Warn]</span>
-                                <span className="state-critical">[Critical]</span>
-                            </div>
-                        </div>
-
-                        <div className="temp-meta-strip">
-                            <div className="meta-item">
-                                <span className="meta-label">Rate of Rise:</span>
-                                <span className="meta-val">+0.3°C/min</span>
-                            </div>
-                            <div className="meta-item">
-                                <div className="status-indicator stable"></div>
-                                <span className="meta-val">Stable</span>
-                            </div>
-                        </div>
+                    <div className="mo-hdr-right">
+                        <span className="mo-unit-badge" style={{ color: 'rgba(251,146,60,0.9)', background: 'rgba(251,146,60,0.1)', borderColor: 'rgba(251,146,60,0.25)' }}>°C | °F</span>
+                        <button className="mo-close" onClick={onClose}>×</button>
                     </div>
                 </div>
 
-                {/* Sub-Grid Section */}
-                <div className="temp-grid-section">
-                    <div className="temp-grid-col all-sensors">
-                        <span className="temp-label">ALL SENSORS</span>
-                        <div className="sensor-list">
-                            <div className="sensor-item">
-                                <span>T1 Stage 1:</span>
-                                <div className="sensor-val-group">
-                                    <span className="s-val">142°C</span>
-                                    <div className="s-indicator active"></div>
-                                </div>
-                            </div>
-                            <div className="sensor-item">
-                                <span>T2 Interstage:</span>
-                                <div className="sensor-val-group">
-                                    <span className="s-val">48°C</span>
-                                    <div className="s-indicator active"></div>
-                                </div>
-                            </div>
-                            <div className="sensor-item">
-                                <span>T3 Stage 2:</span>
-                                <div className="sensor-val-group">
-                                    <span className="s-val">{primaryValue}°C</span>
-                                    <div className="s-indicator active"></div>
-                                </div>
-                            </div>
-                            <div className="sensor-item">
-                                <span>T4 Ambient:</span>
-                                <div className="sensor-val-group">
-                                    <span className="s-val">34°C</span>
-                                    <div className="s-indicator active"></div>
-                                </div>
-                            </div>
-                            <div className="sensor-item">
-                                <span>T5 Oil Sump:</span>
-                                <div className="sensor-val-group">
-                                    <span className="s-val">74°C</span>
-                                    <div className="s-indicator active"></div>
-                                </div>
-                            </div>
+                <div className="mo-hero" style={{ background: 'linear-gradient(180deg,rgba(249,115,22,0.07) 0%,transparent 100%)' }}>
+                    <span className="mo-hero-label">PRIMARY — Stage 2 Discharge (T3)</span>
+                    <div className="mo-hero-row">
+                        <div className="mo-hero-dot" style={{ background: '#f97316', boxShadow: '0 0 0 3px rgba(249,115,22,0.2),0 0 16px rgba(249,115,22,0.5)' }} />
+                        <span className="mo-hero-val" style={{ background: 'linear-gradient(135deg,#fff 30%,#fb923c 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                            {primaryValue}°C
+                        </span>
+                        <span className="mo-hero-conv">({convValue}°F)</span>
+                    </div>
+
+                    <div className="mo-zone-wrap">
+                        <div className="mo-zone-bar">
+                            <div className="mo-zone normal" />
+                            <div className="mo-zone warn" />
+                            <div className="mo-zone critical" />
+                            <motion.div className="mo-zone-cursor"
+                                initial={{ left: 0 }}
+                                animate={{ left: `${Math.min((primaryValue / 100) * 100, 99)}%` }}
+                                transition={{ duration: 1 }}
+                            />
+                        </div>
+                        <div className="mo-zone-labels">
+                            <span>0°C</span><span>40°C</span><span>75°C</span><span>90°C</span>
+                        </div>
+                        <div className="mo-zone-names">
+                            <span className="zn-normal">Normal</span>
+                            <span className="zn-warn">Warning</span>
+                            <span className="zn-critical">Critical</span>
                         </div>
                     </div>
 
-                    <div className="temp-grid-col intercooler">
-                        <span className="temp-label">INTERCOOLER HEALTH</span>
-                        <div className="intercooler-logic">
-                            <div className="calc-line">ΔT = T1 - T2</div>
-                            <div className="calc-values">142 - 48 = {deltaT}°C</div>
-                            <div className="health-status">
-                                <div className="s-indicator active"></div>
-                                <span>Excellent — fins clean</span>
-                            </div>
+                    <div className="mo-meta">
+                        <div className="mo-meta-item"><span className="mo-meta-lbl">Rate of Rise</span><span className="mo-meta-val">+0.3°C/min</span></div>
+                        <div className="mo-meta-item"><div className="mo-stable-dot" /><span className="mo-meta-val">Stable</span></div>
+                    </div>
+                </div>
+
+                <div className="mo-grid2">
+                    <div className="mo-card">
+                        <span className="mo-card-title">ALL SENSORS</span>
+                        <div className="mo-sensor-list">
+                            {[['T1 Stage 1', '142°C'], ['T2 Interstage', '48°C'], ['T3 Stage 2', `${primaryValue}°C`], ['T4 Ambient', '34°C'], ['T5 Oil Sump', '74°C']].map(([label, val]) => (
+                                <div className="mo-sensor-row" key={label}>
+                                    <span className="mo-sensor-lbl">{label}</span>
+                                    <div className="mo-sensor-right"><span className="mo-sensor-val">{val}</span><div className="mo-dot-green" /></div>
+                                </div>
+                            ))}
                         </div>
-                        <div className="ambient-correction">
-                            <div className="correction-line">Ambient Correction: +9°C</div>
-                            <div className="corrected-value">
-                                <span>Corrected T3: 49°C</span>
-                                <div className="s-indicator active"></div>
+                    </div>
+                    <div className="mo-card">
+                        <span className="mo-card-title">INTERCOOLER HEALTH</span>
+                        <div className="mo-intercooler">
+                            <div className="mo-calc-box">
+                                <span className="mo-calc-label">ΔT = T1 − T2</span>
+                                <span className="mo-calc-val">142 − 48 = {deltaT}°C</span>
+                                <div className="mo-health-row"><div className="mo-dot-green" /><span className="mo-health-txt">Excellent — fins clean</span></div>
+                            </div>
+                            <div className="mo-ambient">
+                                <span className="mo-ambient-lbl">Ambient Correction: +9°C</span>
+                                <div className="mo-corrected"><span>Corrected T3: 49°C</span><div className="mo-dot-green" /></div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Trend Section */}
-                <div className="temp-trend-section">
-                    <span className="temp-label">TREND — T3 Stage 2 Discharge (last 60 min)</span>
-                    <div className="temp-graph-box">
-                        <div className="graph-y-axis">
-                            <span>90°</span>
-                            <span>75°</span>
-                            <span>60°</span>
-                            <span>40°</span>
-                        </div>
-                        <div className="graph-main">
+                <div className="mo-trend">
+                    <span className="mo-card-title">TREND — T3 Stage 2 Discharge (last 60 min)</span>
+                    <div className="mo-chart-box">
+                        <div className="mo-y-axis"><span>90°</span><span>75°</span><span>60°</span><span>40°</span></div>
+                        <div className="mo-chart-area">
                             <ResponsiveContainer width="100%" height={100}>
                                 <AreaChart data={trendData}>
                                     <defs>
-                                        <linearGradient id="tempGradient" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#fff" stopOpacity={0.2} />
-                                            <stop offset="95%" stopColor="#fff" stopOpacity={0} />
+                                        <linearGradient id="tGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#f97316" stopOpacity={0.35} />
+                                            <stop offset="95%" stopColor="#f97316" stopOpacity={0} />
                                         </linearGradient>
                                     </defs>
-                                    <Area
-                                        type="stepAfter"
-                                        dataKey="value"
-                                        stroke="#fff"
-                                        strokeWidth={1}
-                                        fill="url(#tempGradient)"
-                                        isAnimationActive={false}
-                                    />
+                                    <Area type="monotone" dataKey="value" stroke="#f97316" strokeWidth={2} fill="url(#tGrad)" dot={false} activeDot={{ r: 5, fill: '#fff', stroke: '#f97316', strokeWidth: 2 }} />
                                     <XAxis dataKey="time" hide />
                                     <YAxis hide domain={['dataMin - 10', 'dataMax + 10']} />
+                                    <Tooltip contentStyle={{ background: 'rgba(0,0,0,0.85)', border: '1px solid rgba(249,115,22,0.3)', borderRadius: '8px', fontSize: '0.75rem' }} itemStyle={{ color: '#f97316' }} formatter={v => [`${v}°C`, 'Temp']} />
                                 </AreaChart>
                             </ResponsiveContainer>
                         </div>
                     </div>
-                    <div className="temp-graph-footer">
-                        <span>60 min ago</span>
-                        <span>Now</span>
+                    <div className="mo-chart-footer"><span>60 min ago</span><span>Now</span></div>
+                </div>
+
+                <div className="mo-footer">
+                    <div className="mo-footer-notice">🔧 Next intercooler cleaning: In 12 days</div>
+                    <div className="mo-footer-status">
+                        <span>Last alert: None today</span>
+                        <span className="mo-sep">|</span>
+                        <span>All sensors: Online <span className="mo-check">✓</span></span>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    /* ── Default Console — same layout as temp, metric-color accented ── */
+    const renderDefaultConsole = () => {
+        const pct = Math.min((primaryValue / cfg.rangeMax) * 100, 100);
+
+        return (
+            <div className="mo-default">
+                {/* Header */}
+                <div className="mo-hdr">
+                    <div className="mo-hdr-left">
+                        <div className="mo-live-dot" style={{ background: cfg.color, boxShadow: `0 0 10px ${cfg.color}` }} />
+                        <span className="mo-hdr-title">{metric.title.toUpperCase()}</span>
+                        <span className="mo-hdr-sep">—</span>
+                        <span className="mo-hdr-sub">{deviceName}</span>
+                    </div>
+                    <div className="mo-hdr-right">
+                        <span className="mo-unit-badge" style={{ color: cfg.color, background: `${cfg.color}18`, borderColor: `${cfg.color}40` }}>
+                            {cfg.unit}{cfg.conv ? ` | ${cfg.conv}` : ''}
+                        </span>
+                        <button className="mo-close" onClick={onClose}>×</button>
                     </div>
                 </div>
 
-                {/* Footer Section */}
-                <div className="temp-footer">
-                    <div className="footer-top-line">
-                        <span className="tool-icon">🔧</span>
-                        <span>Next intercooler cleaning: In 12 days</span>
+                {/* Hero value */}
+                <div className="mo-hero" style={{ background: `linear-gradient(180deg,${cfg.color}09 0%,transparent 100%)` }}>
+                    <span className="mo-hero-label">PRIMARY — {cfg.primary}</span>
+                    <div className="mo-hero-row">
+                        <div className="mo-hero-dot" style={{ background: cfg.color, boxShadow: `0 0 0 3px ${cfg.color}30,0 0 16px ${cfg.color}80` }} />
+                        <span className="mo-hero-val" style={{ background: `linear-gradient(135deg,#fff 30%,${cfg.color} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                            {primaryValue}
+                            <span style={{ fontSize: '1.4rem', fontWeight: 700 }}> {cfg.unit}</span>
+                        </span>
+                        {cfg.conv && <span className="mo-hero-conv">({convValue} {cfg.conv})</span>}
                     </div>
-                    <div className="footer-bottom-line">
-                        <div className="f-left">Last alert: None today</div>
-                        <div className="divider">|</div>
-                        <div className="f-right">
-                            <span>All sensors: Online</span>
-                            <div className="check-box-monochrome">✓</div>
+
+                    {/* Zone bar */}
+                    <div className="mo-zone-wrap">
+                        <div className="mo-zone-bar">
+                            <div className="mo-zone normal" style={{ width: '50%' }} />
+                            <div className="mo-zone warn" style={{ width: '30%' }} />
+                            <div className="mo-zone critical" style={{ width: '20%' }} />
+                            <motion.div className="mo-zone-cursor"
+                                initial={{ left: 0 }}
+                                animate={{ left: `${Math.min(pct, 98)}%` }}
+                                transition={{ duration: 1 }}
+                            />
                         </div>
+                        <div className="mo-zone-labels">
+                            <span>0</span>
+                            <span>{(cfg.rangeMax * 0.5).toFixed(0)}{cfg.unit}</span>
+                            <span>{(cfg.rangeMax * 0.8).toFixed(0)}{cfg.unit}</span>
+                            <span>{cfg.rangeMax}{cfg.unit}</span>
+                        </div>
+                        <div className="mo-zone-names">
+                            <span className="zn-normal">Normal</span>
+                            <span className="zn-warn">Warning</span>
+                            <span className="zn-critical">Critical</span>
+                        </div>
+                    </div>
+
+                    {/* Meta strip */}
+                    <div className="mo-meta">
+                        <div className="mo-meta-item">
+                            <span className="mo-meta-lbl">Current</span>
+                            <span className="mo-meta-val">{primaryValue} {cfg.unit}</span>
+                        </div>
+                        <div className="mo-meta-item">
+                            <span className="mo-meta-lbl">Range</span>
+                            <span className="mo-meta-val">{metric.min ?? 0} – {metric.max ?? cfg.rangeMax} {cfg.unit}</span>
+                        </div>
+                        <div className="mo-meta-item">
+                            <div className="mo-stable-dot" />
+                            <span className="mo-meta-val">Normal</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Two glassmorphism cards */}
+                <div className="mo-grid2">
+                    <div className="mo-card">
+                        <span className="mo-card-title">OPERATING PARAMETERS</span>
+                        <div className="mo-sensor-list">
+                            {[
+                                ['Primary', `${primaryValue} ${cfg.unit}`],
+                                ['Secondary', `${(primaryValue * 0.4).toFixed(1)} ${cfg.unit}`],
+                                ['Cut-in Limit', `${(cfg.rangeMax * 0.7).toFixed(1)} ${cfg.unit}`],
+                                ['Shut-down Limit', `${(cfg.rangeMax * 0.9).toFixed(1)} ${cfg.unit}`],
+                                ['Optimal Range', String(metric.optimal ?? '—')],
+                            ].map(([label, val]) => (
+                                <div className="mo-sensor-row" key={label}>
+                                    <span className="mo-sensor-lbl">{label}</span>
+                                    <div className="mo-sensor-right">
+                                        <span className="mo-sensor-val">{val}</span>
+                                        <div className="mo-dot-green" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="mo-card">
+                        <span className="mo-card-title">STATUS &amp; DIAGNOSTICS</span>
+                        <div className="mo-intercooler">
+                            <div className="mo-calc-box">
+                                <span className="mo-calc-label">CURRENT vs OPTIMAL</span>
+                                <span className="mo-calc-val" style={{ color: cfg.color }}>{primaryValue} {cfg.unit}</span>
+                                <div className="mo-health-row" style={{ color: '#4ade80' }}>
+                                    <div className="mo-dot-green" />
+                                    <span>Within normal operating range</span>
+                                </div>
+                            </div>
+                            <div className="mo-ambient">
+                                <span className="mo-ambient-lbl">Device: {deviceName}</span>
+                                <div className="mo-corrected">
+                                    <span>State: LOADED</span>
+                                    <div className="mo-dot-green" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Trend chart */}
+                <div className="mo-trend">
+                    <span className="mo-card-title">HISTORICAL TREND — {cfg.primary} (last 60 min)</span>
+                    <div className="mo-chart-box">
+                        <div className="mo-y-axis">
+                            <span>{cfg.rangeMax}</span>
+                            <span>{(cfg.rangeMax * 0.66).toFixed(0)}</span>
+                            <span>{(cfg.rangeMax * 0.33).toFixed(0)}</span>
+                            <span>0</span>
+                        </div>
+                        <div className="mo-chart-area">
+                            <ResponsiveContainer width="100%" height={100}>
+                                <AreaChart data={trendData}>
+                                    <defs>
+                                        <linearGradient id="dGrad" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={cfg.color} stopOpacity={0.35} />
+                                            <stop offset="95%" stopColor={cfg.color} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <Area type="monotone" dataKey="value" stroke={cfg.color} strokeWidth={2} fill="url(#dGrad)" dot={false} activeDot={{ r: 5, fill: '#fff', stroke: cfg.color, strokeWidth: 2 }} />
+                                    <XAxis dataKey="time" hide />
+                                    <YAxis hide domain={[0, cfg.rangeMax]} />
+                                    <Tooltip contentStyle={{ background: 'rgba(0,0,0,0.85)', border: `1px solid ${cfg.color}44`, borderRadius: '8px', fontSize: '0.75rem' }} itemStyle={{ color: cfg.color }} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    </div>
+                    <div className="mo-chart-footer"><span>60 min ago</span><span>Now</span></div>
+                </div>
+
+                {/* Footer */}
+                <div className="mo-footer">
+                    <div className="mo-footer-status">
+                        <span>Δ vs last shift: <strong>↓ -0.4</strong></span>
+                        <span className="mo-sep">|</span>
+                        <span>Last alert: <strong>None</strong></span>
+                        <span className="mo-sep">|</span>
+                        <span>Sensor: <strong>Online</strong> <span className="mo-check">✓</span></span>
                     </div>
                 </div>
             </div>
@@ -234,154 +329,21 @@ const MetricDetailOverlay = ({ isOpen, onClose, metric, deviceName, history }) =
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    className="ind-modal-overlay"
+                    className="mo-overlay"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={onClose}
                 >
                     <motion.div
-                        className="ind-console-container"
-                        id="ind-console-container"
+                        className="mo-container"
                         initial={{ opacity: 0, scale: 0.95, y: 30 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 30 }}
-                        transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        onClick={(e) => e.stopPropagation()}
+                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                        onClick={e => e.stopPropagation()}
                     >
-                        {isTemperature ? renderTemperatureConsole() : (
-                            <>
-                                {/* Default Console Header */}
-                                <div className="ind-header">
-                                    <div className="ind-status-group">
-                                        <div className="ind-blue-dot"></div>
-                                        <span className="ind-title-text">{metric.title.split(' ')[0].toUpperCase()}</span>
-                                        <span className="ind-dash">/</span>
-                                        <span className="ind-device-text">{deviceName}</span>
-                                        <span className="ind-units-bracket">[ {config.unit} | {config.convLabel} ]</span>
-                                    </div>
-                                    <button className="ind-close-icon" onClick={onClose}>×</button>
-                                </div>
-
-                                {/* Top Data Section */}
-                                <div className="ind-row ind-top-data">
-                                    <div className="ind-col ind-col-left">
-                                        <span className="ind-label">{config.primary}</span>
-                                        <div className="ind-value-display">
-                                            <span className="ind-main-val">{primaryValue}</span>
-                                            <span className="ind-unit-label">{config.unit}</span>
-                                        </div>
-                                        <span className="ind-sub-val">({convValue} {config.convLabel})</span>
-
-                                        <div className="ind-viz-bar">
-                                            <div className="ind-bar-track">
-                                                <motion.div
-                                                    className="ind-bar-fill"
-                                                    initial={{ width: 0 }}
-                                                    animate={{ width: `${Math.min((primaryValue / config.rangeMax) * 100, 100)}%` }}
-                                                    transition={{ duration: 1, ease: "circOut" }}
-                                                ></motion.div>
-                                                <div className="ind-bar-hatch"></div>
-                                            </div>
-                                            <div className="ind-bar-scale">
-                                                <span>0.00</span>
-                                                <span>{(config.rangeMax / 2).toFixed(2)}</span>
-                                                <span>{config.rangeMax}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="ind-v-line"></div>
-
-                                    <div className="ind-col ind-col-right">
-                                        <div className="param-header-row">
-                                            <span className="ind-label">{config.secondary}</span>
-                                            <div className="ind-status-pill">
-                                                <div className="ind-green-dot"></div>
-                                                <span>Normal</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="ind-value-display small">
-                                            <span className="ind-main-val secondary">{(primaryValue * 0.4).toFixed(1)}</span>
-                                            <span className="ind-unit-label secondary">{config.unit}</span>
-                                        </div>
-                                        <span className="ind-sub-val secondary">({(convValue * 0.4).toFixed(1)} {config.convLabel})</span>
-
-                                        <div className="ind-params-list">
-                                            <div className="ind-param">
-                                                <span className="ind-p-key">Cut-in Limit</span>
-                                                <span className="ind-p-val">{(config.rangeMax * 0.7).toFixed(1)} {config.unit}</span>
-                                            </div>
-                                            <div className="ind-param">
-                                                <span className="ind-p-key">Shut-down Limit</span>
-                                                <span className="ind-p-val">{(config.rangeMax * 0.9).toFixed(1)} {config.unit}</span>
-                                            </div>
-                                            <div className="ind-param accent">
-                                                <span className="ind-p-key">State</span>
-                                                <span className="ind-p-val highlight">[ LOADED ]</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Trend Section */}
-                                <div className="ind-trend-box">
-                                    <span className="ind-label">Historical Trend Analysis</span>
-                                    <div className="ind-graph-container">
-                                        <div className="ind-y-axis">
-                                            <span>{config.rangeMax}</span>
-                                            <span>{config.rangeMax / 2}</span>
-                                            <span>0</span>
-                                        </div>
-                                        <div className="ind-chart-box">
-                                            <ResponsiveContainer width="100%" height={100}>
-                                                <AreaChart data={trendData}>
-                                                    <defs>
-                                                        <linearGradient id="indChartGradient" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
-                                                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                                        </linearGradient>
-                                                    </defs>
-                                                    <XAxis dataKey="time" hide />
-                                                    <YAxis hide domain={[0, config.rangeMax]} />
-                                                    <Tooltip
-                                                        contentStyle={{ background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                                                        itemStyle={{ color: '#fff' }}
-                                                    />
-                                                    <Area
-                                                        type="monotone"
-                                                        dataKey="value"
-                                                        stroke="#3b82f6"
-                                                        strokeWidth={3}
-                                                        fill="url(#indChartGradient)"
-                                                        activeDot={{ r: 6, fill: '#fff', stroke: '#3b82f6', strokeWidth: 2 }}
-                                                    />
-                                                </AreaChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </div>
-                                    <div className="ind-graph-footer">
-                                        <span>L60_MIN_HISTORY</span>
-                                        <span>REALTIME_ACQUISITION</span>
-                                    </div>
-                                </div>
-
-                                {/* Footer Section */}
-                                <div className="ind-footer">
-                                    <div className="ind-footer-left">
-                                        <span className="ind-delta-icon">Δ</span>
-                                        <span className="ind-footer-item">vs last shift: <span className="white">↓ -0.4</span></span>
-                                        <span className="ind-warning-icon">⚠️</span>
-                                        <span className="ind-warning-text">Normal</span>
-                                    </div>
-                                    <div className="ind-footer-right">
-                                        <span className="ind-footer-item">Last alert: <span className="white">None</span></span>
-                                        <span className="ind-footer-item">Sensor: <span className="white">Online</span> <span className="ind-check-box">☑</span></span>
-                                    </div>
-                                </div>
-                            </>
-                        )}
+                        {isTemperature ? renderTemperatureConsole() : renderDefaultConsole()}
                     </motion.div>
                 </motion.div>
             )}
