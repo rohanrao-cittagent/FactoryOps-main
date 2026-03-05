@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Filter, Layers, Plus, CheckCircle2, AlertTriangle, Flame, ShieldAlert, Cpu, Loader2, AlertCircle } from 'lucide-react';
 import DeviceCard from '../components/Dashboard/DeviceCard';
-import { mockDevices } from '../data/mockDevices';
+import { api } from '../api/client';
 import './Devices.css';
 
 const HealthMetric = ({ label, value, percent, color, icon: Icon }) => (
@@ -31,8 +31,19 @@ const Devices = () => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        setDevices(mockDevices);
-        setLoading(false);
+        const fetchDevices = async () => {
+            try {
+                const response = await api.getEquipment();
+                setDevices(response.data || []);
+            } catch (err) {
+                console.error("Failed to load devices:", err);
+                setError("Could not establish connection to the device fleet.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchDevices();
     }, []);
 
     const stats = {

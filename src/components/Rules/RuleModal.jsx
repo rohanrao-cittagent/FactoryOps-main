@@ -21,7 +21,6 @@ const METRICS = [
 const OPERATORS = ['>', '<', '==', '>=', '<='];
 const TARGETS = ['All Machines', 'Specific Devices', 'Device Type'];
 const CHANNELS = ['Email', 'In-app', 'SMS', 'WhatsApp', 'Telegram', 'Webhook'];
-const DEVICES = ['D1-Compressor', 'D2-Compressor', 'D3-Boiler', 'D4-Boiler', 'Pump-01', 'Chiller-05'];
 
 const UNIT_MAP = {
     'Temperature': '°C',
@@ -41,18 +40,43 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
     const { addNotification } = useNotification();
     const [name, setName] = useState('');
     const [target, setTarget] = useState('Specific Devices');
-    const [selectedDevice, setSelectedDevice] = useState('D1-Compressor');
+
+    // Dynamic Devices state
+    const [devices, setDevices] = useState([]);
+    const [selectedDevice, setSelectedDevice] = useState('');
+
     const [selectedType, setSelectedType] = useState('Compressors');
     const [conditions, setConditions] = useState([
         { metric: 'Temperature', operator: '>', value: '95', logic: 'AND' }
     ]);
     const [selectedChannels, setSelectedChannels] = useState(['Email', 'In-app']);
 
+    // Fetch devices on mount
+    useEffect(() => {
+        const fetchDevices = async () => {
+            try {
+                // We need api imported for this to work
+                const { api } = await import('../../api/client');
+                const response = await api.getEquipment();
+                const deviceList = response.data || [];
+                setDevices(deviceList);
+                if (deviceList.length > 0 && !selectedDevice) {
+                    setSelectedDevice(deviceList[0].id);
+                }
+            } catch (error) {
+                console.error("Failed to load devices", error);
+            }
+        };
+        if (isOpen) {
+            fetchDevices();
+        }
+    }, [isOpen]);
+
     useEffect(() => {
         if (editingRule) {
             setName(editingRule.name || '');
             setTarget(editingRule.devices === 'All Machines' ? 'All Machines' : 'Specific Devices');
-            setSelectedDevice(editingRule.devices !== 'All Machines' ? editingRule.devices : 'D1-Compressor');
+            setSelectedDevice(editingRule.devices !== 'All Machines' ? editingRule.devices : (devices.length ? devices[0].id : ''));
 
             if (editingRule.conditions && editingRule.conditions.length > 0) {
                 setConditions(editingRule.conditions);
@@ -72,8 +96,9 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
             setTarget('Specific Devices');
             setConditions([{ metric: 'Temperature', operator: '>', value: '95', logic: 'AND' }]);
             setSelectedChannels(['Email', 'In-app']);
+            if (devices.length > 0) setSelectedDevice(devices[0].id);
         }
-    }, [editingRule, isOpen]);
+    }, [editingRule, isOpen, devices]);
 
     const handleChannelToggle = (channel) => {
         setSelectedChannels(prev =>
@@ -206,7 +231,8 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
                                                 value={selectedDevice}
                                                 onChange={(e) => setSelectedDevice(e.target.value)}
                                             >
-                                                {DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
+                                                {devices.length === 0 && <option value="" disabled>Loading devices...</option>}
+                                                {devices.map(d => <option key={d.id} value={d.id}>{d.name} ({d.id})</option>)}
                                             </select>
                                         </div>
                                     </motion.div>

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Activity, ShieldCheck, Zap, AlertCircle, ChevronRight, Loader2 } from 'lucide-react';
 import MetricCard from '../components/Dashboard/MetricCard';
 import DeviceCard from '../components/Dashboard/DeviceCard';
-import { mockDevices } from '../data/mockDevices';
+import { api } from '../api/client';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -11,16 +11,39 @@ const Dashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const avgHealth = devices.length > 0 ? Math.round(devices.reduce((acc, d) => acc + (Number(d.health) || 0), 0) / devices.length) : 0;
+    const avgEfficiency = devices.length > 0 ? Math.round(devices.reduce((acc, d) => acc + (Number(d.efficiency) || 0), 0) / devices.length) : 0;
+
     const metrics = [
         { title: 'Total Devices', value: devices.length.toString(), trend: '+3 this month' },
-        { title: 'Active Alerts', value: devices.filter(d => d.status === 'Warning').length.toString(), trend: '6 Critical' },
-        { title: 'System Health', value: '84%', trend: 'Healthy' },
-        { title: 'Avg Efficiency', value: '79%', trend: '-2% vs LW' },
+        { title: 'Active Alerts', value: devices.filter(d => d.status === 'Warning' || d.status === 'critical').length.toString(), trend: 'Recent' },
+        { title: 'System Health', value: `${avgHealth}%`, trend: avgHealth > 80 ? 'Healthy' : 'Needs Attention' },
+        { title: 'Avg Efficiency', value: `${avgEfficiency}%`, trend: 'Real-time Updates' },
     ];
 
     useEffect(() => {
-        setDevices(mockDevices);
-        setLoading(false);
+        let isMounted = true;
+        const fetchDashboardData = async () => {
+            try {
+                const response = await api.getEquipment();
+                if (isMounted) {
+                    setDevices(response.data || []);
+                    setError(null);
+                }
+            } catch (err) {
+                console.error("Dashboard data fetch error:", err);
+                if (isMounted) setError("Partial connection failure. Syncing...");
+            } finally {
+                if (isMounted) setLoading(false);
+            }
+        };
+
+        fetchDashboardData();
+        const interval = setInterval(fetchDashboardData, 3000);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
     }, []);
 
     if (loading) {

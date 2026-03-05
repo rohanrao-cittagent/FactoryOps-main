@@ -98,9 +98,13 @@ const MetricDetailOverlay = ({ isOpen, onClose, metric, deviceName, history }) =
 
                 <div className="mo-grid2">
                     <div className="mo-card">
-                        <span className="mo-card-title">ALL SENSORS</span>
+                        <span className="mo-card-title">LIVE PARAMETERS</span>
                         <div className="mo-sensor-list">
-                            {[['T1 Stage 1', '142°C'], ['T2 Interstage', '48°C'], ['T3 Stage 2', `${primaryValue}°C`], ['T4 Ambient', '34°C'], ['T5 Oil Sump', '74°C']].map(([label, val]) => (
+                            {[
+                                ['Discharge Temp', `${primaryValue}°C`],
+                                ['Ambient Temp', '34°C'], // Simplified
+                                ['System Status', 'Nominal']
+                            ].map(([label, val]) => (
                                 <div className="mo-sensor-row" key={label}>
                                     <span className="mo-sensor-lbl">{label}</span>
                                     <div className="mo-sensor-right"><span className="mo-sensor-val">{val}</span><div className="mo-dot-green" /></div>

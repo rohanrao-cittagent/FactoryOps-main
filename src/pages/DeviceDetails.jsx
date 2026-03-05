@@ -27,7 +27,7 @@ import RuleModal from '../components/Rules/RuleModal';
 import MetricDetailOverlay from '../components/Dashboard/MetricDetailOverlay';
 import { useToast } from '../components/Shared/Toast';
 import { NotificationService } from '../services/NotificationService';
-import { mockDevices } from '../data/mockDevices';
+import { api } from '../api/client';
 import './DeviceDetails.css';
 
 const MetricCard = ({ title, value, unit, icon: Icon, min, max, optimal, percent, onClick }) => (
@@ -73,10 +73,10 @@ const DeviceDetails = () => {
     const [selectedMetricView, setSelectedMetricView] = useState(null);
     const { showToast, ToastContainer } = useToast();
 
-    const loadFilteredRules = (foundDevice) => {
-        const savedRules = localStorage.getItem('factoryops_rules');
-        if (savedRules) {
-            const allRules = JSON.parse(savedRules);
+    const loadFilteredRules = async (foundDevice) => {
+        try {
+            const response = await api.getRules();
+            const allRules = Array.isArray(response) ? response : (response.data || []);
             const filtered = allRules.filter(rule => {
                 if (rule.status !== 'Active') return false;
 
@@ -84,7 +84,7 @@ const DeviceDetails = () => {
                 const deviceName = (foundDevice.name || '').toLowerCase();
                 const deviceType = (foundDevice.type || '').toLowerCase();
                 const deviceId = (foundDevice.id || '').toLowerCase();
-                const deviceFullId = (foundDevice.fullId || '').toLowerCase();
+                const deviceFullId = (foundDevice.fullId || foundDevice.id || '').toLowerCase();
 
                 // 1. Global rules
                 if (ruleDevice === 'all machines' || rule.target === 'All Machines') return true;
@@ -101,109 +101,114 @@ const DeviceDetails = () => {
                 return false;
             });
             setAppliedRules(filtered);
+        } catch (error) {
+            console.error("Failed to load filtered rules:", error);
         }
     };
 
     useEffect(() => {
-        const fetchDevice = () => {
-            const foundDevice = mockDevices.find(d => d.id === id);
-            if (foundDevice) {
-                // Initialize with some historical data
-                const initialTelemetry = Array.from({ length: 15 }).map((_, i) => {
-                    const time = new Date(Date.now() - (15 - i) * 3000);
-                    return {
-                        timestamp: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                        efficiency: Math.floor(70 + Math.random() * 20),
-                        healthScore: Math.floor(85 + Math.random() * 10),
-                        uptime: Number((99.5 + Math.random() * 0.4).toFixed(1)),
-                        powerWastage: Number((Math.random() * 0.5).toFixed(2)),
-                        revenueImpact: Number((Math.random() * 50).toFixed(2)),
-                        pressure: Number((foundDevice.metrics?.pressure?.value || 120 + (Math.random() * 10 - 5)).toFixed(1)),
-                        temperature: Number((foundDevice.metrics?.temperature?.value || 80 + (Math.random() * 10 - 5)).toFixed(1)),
-                        vibration: Number((foundDevice.metrics?.vibration?.value || 2 + (Math.random() * 1)).toFixed(2)),
-                        power: Number((foundDevice.metrics?.power?.value || 3.5 + (Math.random() * 0.5)).toFixed(2))
-                    };
-                });
+        const fetchInitialData = async () => {
+            try {
+                // 1. Fetch Device basic info
+                const deviceRes = await api.getEquipmentById(id);
+                const foundDevice = deviceRes.data;
 
-                setDevice({ ...foundDevice });
+                if (!foundDevice) {
+                    setError('The requested equipment could not be found.');
+                    setLoading(false);
+                    return;
+                }
+
+                // 2. Fetch Telemetry history (last 15 points)
+                const telemetryRes = await api.getTelemetry(id);
+                const historyRaw = telemetryRes.data || [];
+
+                // Transform telemetry for chart (Recharts needs ascending order)
+                const initialTelemetry = historyRaw.slice(0, 15).reverse().map(item => ({
+                    timestamp: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                    efficiency: item.efficiency,
+                    healthScore: item.healthScore,
+                    uptime: item.uptime,
+                    pressure: item.pressure,
+                    temperature: item.temperature,
+                    vibration: item.vibration,
+                    power: item.power
+                }));
+
+                setDevice(foundDevice);
                 setTelemetry(initialTelemetry);
-                setError(null);
                 loadFilteredRules(foundDevice);
-            } else {
-                setError('The requested equipment could not be found.');
+            } catch (err) {
+                console.error("Error loading device details:", err);
+                setError('Failed to sync with equipment telemetry stream.');
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
 
-        fetchDevice();
+        fetchInitialData();
     }, [id]);
 
-    // Live Telemetry Simulation
+    // Live Telemetry Polling
     useEffect(() => {
         if (!device || loading) return;
 
-        const interval = setInterval(() => {
-            setDevice(prev => {
-                if (!prev) return prev;
-
-                // Simulate metric fluctuations
-                const updatedMetrics = { ...prev.metrics };
-                const fluctuate = (val, range, decimals = 1) => Number((val + (Math.random() - 0.5) * range).toFixed(decimals));
-
-                if (updatedMetrics.pressure) {
-                    updatedMetrics.pressure.value = fluctuate(updatedMetrics.pressure.value, 1.5);
-                    updatedMetrics.pressure.percent = Math.min(100, Math.max(0, updatedMetrics.pressure.percent + (Math.random() - 0.5) * 2));
-                }
-                if (updatedMetrics.temperature) {
-                    updatedMetrics.temperature.value = fluctuate(updatedMetrics.temperature.value, 1.2);
-                    updatedMetrics.temperature.percent = Math.min(100, Math.max(0, updatedMetrics.temperature.percent + (Math.random() - 0.5) * 1.5));
-                }
-                if (updatedMetrics.vibration) {
-                    updatedMetrics.vibration.value = fluctuate(updatedMetrics.vibration.value, 0.1, 2);
-                    updatedMetrics.vibration.percent = Math.min(100, Math.max(0, updatedMetrics.vibration.percent + (Math.random() - 0.5) * 3));
-                }
-                if (updatedMetrics.power) {
-                    updatedMetrics.power.value = fluctuate(updatedMetrics.power.value, 0.2, 1);
-                    updatedMetrics.power.percent = Math.min(100, Math.max(0, updatedMetrics.power.percent + (Math.random() - 0.5) * 2));
+        const refreshData = async () => {
+            try {
+                // 1. Refresh Device Info (for status updates)
+                const deviceRes = await api.getEquipmentById(id);
+                if (deviceRes.data) {
+                    setDevice(prev => ({
+                        ...prev,
+                        ...deviceRes.data,
+                    }));
                 }
 
-                // New simulated fields if not in original mock
-                if (!updatedMetrics.oil) updatedMetrics.oil = { value: 0.85, unit: 'LPI', min: 0.5, max: 2.0, optimal: '1.2', percent: 65 };
-                updatedMetrics.oil.value = fluctuate(updatedMetrics.oil.value, 0.05, 2);
-                updatedMetrics.oil.percent = Math.min(100, Math.max(20, updatedMetrics.oil.percent + (Math.random() - 0.5) * 1));
+                // 2. Fetch Latest Telemetry history
+                const telemetryRes = await api.getTelemetry(id);
+                const historyRaw = telemetryRes.data || [];
 
-                if (!updatedMetrics.energy) updatedMetrics.energy = { value: 452, unit: 'kWh', min: 200, max: 800, optimal: '400', percent: 55 };
-                updatedMetrics.energy.value = fluctuate(updatedMetrics.energy.value, 10, 0);
-                updatedMetrics.energy.percent = Math.min(100, Math.max(10, updatedMetrics.energy.percent + (Math.random() - 0.5) * 0.5));
+                // Transform telemetry for chart and latest metrics
+                const updatedTelemetry = historyRaw.slice(0, 15).reverse().map(item => ({
+                    timestamp: new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                    efficiency: item.efficiency,
+                    healthScore: item.healthScore,
+                    uptime: item.uptime,
+                    pressure: item.pressure,
+                    temperature: item.temperature,
+                    vibration: item.vibration,
+                    power: item.power
+                }));
 
-                return { ...prev, metrics: updatedMetrics };
-            });
+                setTelemetry(updatedTelemetry);
 
-            setTelemetry(prev => {
-                const now = new Date();
-                const last = prev[prev.length - 1];
-                const newEntry = {
-                    timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-                    efficiency: Math.floor(75 + Math.random() * 15),
-                    healthScore: Math.floor(90 + (Math.random() - 0.5) * 5),
-                    uptime: Number((99.6 + (Math.random() - 0.5) * 0.2).toFixed(1)),
-                    powerWastage: Number((Math.max(0, (last?.powerWastage || 0.2) + (Math.random() - 0.5) * 0.1)).toFixed(2)),
-                    revenueImpact: Number((Math.max(0, (last?.revenueImpact || 20) + (Math.random() - 0.5) * 5)).toFixed(2)),
-                    pressure: device.metrics?.pressure?.value || 117.8,
-                    temperature: device.metrics?.temperature?.value || 96,
-                    vibration: device.metrics?.vibration?.value || 2.58,
-                    power: device.metrics?.power?.value || 4.5
-                };
+                // 3. Update active device metrics from latest telemetry point
+                if (historyRaw.length > 0) {
+                    const latest = historyRaw[0]; // historyRaw is sorted DESC (latest first)
+                    setDevice(prev => {
+                        if (!prev) return prev;
+                        return {
+                            ...prev,
+                            health: latest.health,
+                            efficiency: latest.efficiency,
+                            metrics: {
+                                ...prev.metrics,
+                                pressure: { ...prev.metrics?.pressure, value: latest.pressure, percent: (latest.pressure / 150) * 100 },
+                                temperature: { ...prev.metrics?.temperature, value: latest.temperature, percent: (latest.temperature / 120) * 100 },
+                                vibration: { ...prev.metrics?.vibration, value: latest.vibration, percent: (latest.vibration / 10) * 100 },
+                                power: { ...prev.metrics?.power, value: latest.power, percent: (latest.power / 500) * 100 }
+                            }
+                        };
+                    });
+                }
+            } catch (err) {
+                console.warn("Live refresh failed:", err);
+            }
+        };
 
-                // Keep last 15 entries
-                const updated = [...prev, newEntry];
-                if (updated.length > 15) return updated.slice(-15);
-                return updated;
-            });
-        }, 3000);
-
+        const interval = setInterval(refreshData, 5000);
         return () => clearInterval(interval);
-    }, [device?.id, loading]);
+    }, [id, device?.id, loading]);
 
     const handleEditRule = (rule) => {
         setEditingRule(rule);
@@ -215,40 +220,39 @@ const DeviceDetails = () => {
         setIsModalOpen(true);
     };
 
-    const handleSaveRule = (updatedRuleData) => {
-        const savedRules = localStorage.getItem('factoryops_rules');
-        const allRules = savedRules ? JSON.parse(savedRules) : [];
+    const handleSaveRule = async (updatedRuleData) => {
+        try {
+            if (editingRule) {
+                // Update existing rule
+                await api.updateRule(editingRule.id, updatedRuleData);
+                showToast('Rule updated successfully', 'success');
+            } else {
+                // Create new rule
+                const ruleToCreate = {
+                    ...updatedRuleData,
+                    status: 'Active' // Force active for rules created from device details
+                };
+                await api.createRule(ruleToCreate);
 
-        let updatedAllRules;
-        if (editingRule) {
-            // Update existing rule
-            updatedAllRules = allRules.map(r =>
-                r.id === editingRule.id ? { ...updatedRuleData, id: r.id } : r
-            );
-        } else {
-            // Create new rule
-            const newRule = {
-                ...updatedRuleData,
-                id: `rule-${Date.now()}`,
-                status: 'Active' // Force active for rules created from device details
-            };
-            updatedAllRules = [...allRules, newRule];
+                // Trigger email notification for new rule
+                NotificationService.sendEmail(
+                    'operator@factoryops.com',
+                    `New Asset Protocol: ${updatedRuleData.name}`,
+                    `A new automation rule "${updatedRuleData.name}" has been linked to ${device.name}. Rule logic: ${updatedRuleData.condition}`
+                ).then(() => {
+                    showToast(`Asset protocol linked! Email notification sent.`, 'success');
+                }).catch(err => {
+                    console.error("Email notification failed", err);
+                    showToast(`Asset protocol linked!`, 'success');
+                });
+            }
+
+            // Reload rules
+            await loadFilteredRules(device);
+        } catch (error) {
+            console.error("Failed to save rule:", error);
+            showToast('Failed to save rule', 'error');
         }
-
-        localStorage.setItem('factoryops_rules', JSON.stringify(updatedAllRules));
-        loadFilteredRules(device);
-
-        if (!editingRule) {
-            // New rule created
-            NotificationService.sendEmail(
-                'operator@factoryops.com',
-                `New Asset Protocol: ${updatedRuleData.name}`,
-                `A new automation rule "${updatedRuleData.name}" has been linked to ${device.name}. Rule logic: ${updatedRuleData.condition}`
-            ).then(() => {
-                showToast(`Asset protocol linked! Email notification sent.`, 'success');
-            });
-        }
-
         setIsModalOpen(false);
     };
 
@@ -352,71 +356,71 @@ const DeviceDetails = () => {
                 <section className="metrics-summary-grid">
                     <MetricCard
                         title="Equipment Health Score"
-                        value={device.health || 92}
+                        value={device.health || '--'}
                         unit="%"
                         icon={Shield}
                         min={0} max={100} optimal="90+"
-                        percent={device.health}
-                        onClick={() => setSelectedMetricView({ title: 'Equipment Health Score', value: device.health || 92, unit: '%', min: 0, max: 100, optimal: '90+', percent: device.health })}
+                        percent={device.health || 0}
+                        onClick={() => setSelectedMetricView({ title: 'Equipment Health Score', value: device.health || '--', unit: '%', min: 0, max: 100, optimal: '90+', percent: device.health || 0 })}
                     />
                     <MetricCard
                         title="Uptime & Availability"
-                        value={99.8}
+                        value={device.uptime || '--'}
                         unit="%"
                         icon={Clock}
                         min={95} max={100} optimal="99.5+"
-                        percent={99}
-                        onClick={() => setSelectedMetricView({ title: 'Uptime & Availability', value: 99.8, unit: '%', min: 95, max: 100, optimal: '99.5+', percent: 99 })}
+                        percent={parseFloat(device.uptime) || 0}
+                        onClick={() => setSelectedMetricView({ title: 'Uptime & Availability', value: device.uptime || '--', unit: '%', min: 95, max: 100, optimal: '99.5+', percent: parseFloat(device.uptime) || 0 })}
                     />
                     <MetricCard
                         title="Pressure (PSI)"
-                        value={device.metrics?.pressure?.value || 117.8}
+                        value={device.metrics?.pressure?.value || device.pressure || '--'}
                         unit="PSI"
                         icon={Gauge}
-                        {...device.metrics?.pressure}
-                        onClick={() => setSelectedMetricView({ title: 'Pressure', ...device.metrics?.pressure })}
+                        {...(device.metrics?.pressure || { percent: (device.pressure / 150) * 100 })}
+                        onClick={() => setSelectedMetricView({ title: 'Pressure', ...(device.metrics?.pressure || { value: device.pressure, percent: (device.pressure / 150) * 100 }) })}
                     />
                     <MetricCard
                         title="Temperature (°C)"
-                        value={device.metrics?.temperature?.value || 96}
+                        value={device.metrics?.temperature?.value || device.temp || '--'}
                         unit="°C"
                         icon={Thermometer}
-                        {...device.metrics?.temperature}
-                        onClick={() => setSelectedMetricView({ title: 'Temperature', ...device.metrics?.temperature })}
+                        {...(device.metrics?.temperature || { percent: (device.temp / 120) * 100 })}
+                        onClick={() => setSelectedMetricView({ title: 'Temperature', ...(device.metrics?.temperature || { value: device.temp, percent: (device.temp / 120) * 100 }) })}
                     />
                     <MetricCard
                         title="Power & Motor Load"
-                        value={device.metrics?.power?.value || 4.5}
+                        value={device.metrics?.power?.value || device.power || '--'}
                         unit="kW"
                         icon={Zap}
-                        {...device.metrics?.power}
-                        onClick={() => setSelectedMetricView({ title: 'Power Consumption', ...device.metrics?.power })}
+                        {...(device.metrics?.power || { percent: (device.power / 500) * 100 })}
+                        onClick={() => setSelectedMetricView({ title: 'Power Consumption', ...(device.metrics?.power || { value: device.power, percent: (device.power / 500) * 100 }) })}
                     />
                     <MetricCard
-                        title="Oil Condition"
-                        value={0.85}
-                        unit="LPI"
+                        title="Line Current (A)"
+                        value={device.current || '--'}
+                        unit="A"
                         icon={Droplets}
-                        min={0.5} max={2.0} optimal="1.2"
-                        percent={65}
-                        onClick={() => setSelectedMetricView({ title: 'Oil Condition', value: 0.85, unit: 'LPI', min: 0.5, max: 2.0, optimal: '1.2', percent: 65 })}
+                        min={0.0} max={2.0} optimal="0.8"
+                        percent={(device.current / 2) * 100 || 0}
+                        onClick={() => setSelectedMetricView({ title: 'Line Current', value: device.current || '--', unit: 'A', min: 0.0, max: 2.0, optimal: '0.8', percent: (device.current / 2) * 100 || 0 })}
                     />
                     <MetricCard
                         title="Vibration (MM/S)"
-                        value={device.metrics?.vibration?.value || 2.58}
+                        value={device.metrics?.vibration?.value || device.vibration || '--'}
                         unit="MM/S"
                         icon={Activity}
-                        {...device.metrics?.vibration}
-                        onClick={() => setSelectedMetricView({ title: 'Vibration', ...device.metrics?.vibration })}
+                        {...(device.metrics?.vibration || { percent: (device.vibration / 10) * 100 })}
+                        onClick={() => setSelectedMetricView({ title: 'Vibration', ...(device.metrics?.vibration || { value: device.vibration, percent: (device.vibration / 10) * 100 }) })}
                     />
                     <MetricCard
-                        title="Energy Consumption"
-                        value={452}
-                        unit="kWh"
+                        title="Line Voltage (V)"
+                        value={device.voltage || '--'}
+                        unit="V"
                         icon={Battery}
-                        min={200} max={800} optimal="400"
-                        percent={55}
-                        onClick={() => setSelectedMetricView({ title: 'Energy Consumption', value: 452, unit: 'kWh', min: 200, max: 800, optimal: '400', percent: 55 })}
+                        min={200} max={250} optimal="230"
+                        percent={((device.voltage - 200) / 50) * 100 || 0}
+                        onClick={() => setSelectedMetricView({ title: 'Line Voltage', value: device.voltage || '--', unit: 'V', min: 200, max: 250, optimal: '230', percent: ((device.voltage - 200) / 50) * 100 || 0 })}
                     />
                 </section>
 
@@ -446,16 +450,22 @@ const DeviceDetails = () => {
                                 Uptime
                             </button>
                             <button
-                                className={`toggle-tab ${activeMetric === 'powerWastage' ? 'active' : ''}`}
-                                onClick={() => setActiveMetric('powerWastage')}
+                                className={`toggle-tab ${activeMetric === 'temperature' ? 'active' : ''}`}
+                                onClick={() => setActiveMetric('temperature')}
                             >
-                                Wastage
+                                Temperature
                             </button>
                             <button
-                                className={`toggle-tab ${activeMetric === 'revenueImpact' ? 'active' : ''}`}
-                                onClick={() => setActiveMetric('revenueImpact')}
+                                className={`toggle-tab ${activeMetric === 'pressure' ? 'active' : ''}`}
+                                onClick={() => setActiveMetric('pressure')}
                             >
-                                Revenue
+                                Pressure
+                            </button>
+                            <button
+                                className={`toggle-tab ${activeMetric === 'vibration' ? 'active' : ''}`}
+                                onClick={() => setActiveMetric('vibration')}
+                            >
+                                Vibration
                             </button>
                         </div>
                     </div>
@@ -469,8 +479,10 @@ const DeviceDetails = () => {
                                 activeMetric === 'efficiency' ? "#6366f1" :
                                     activeMetric === 'healthScore' ? "#10b981" :
                                         activeMetric === 'uptime' ? "#f59e0b" :
-                                            activeMetric === 'powerWastage' ? "#f43f5e" :
-                                                "#a855f7"
+                                            activeMetric === 'temperature' ? "#f43f5e" :
+                                                activeMetric === 'pressure' ? "#3b82f6" :
+                                                    activeMetric === 'vibration' ? "#a855f7" :
+                                                        "#a855f7"
                             }
                         />
                     </div>

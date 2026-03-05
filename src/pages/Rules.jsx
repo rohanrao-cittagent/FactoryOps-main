@@ -78,37 +78,62 @@ const Rules = () => {
         const fetchRules = async () => {
             try {
                 const response = await api.getRules();
-                setRules(response.data);
+                // Assumes response is either an array or has a data property containing the array
+                const rulesData = Array.isArray(response) ? response : (response.data || []);
+                setRules(rulesData);
             } catch (error) {
                 console.error('Failed to fetch rules:', error);
-                // Fallback to local storage or defaults if API fails
-                const savedRules = localStorage.getItem('factoryops_rules');
-                if (savedRules) {
-                    setRules(JSON.parse(savedRules));
-                }
+                setRules([]); // No local storage fallback, just show empty
+                showToast('Failed to connect to rule engine', 'error');
             }
         };
         fetchRules();
     }, []);
 
-    const saveRules = (newRules) => {
-        setRules(newRules);
-        localStorage.setItem('factoryops_rules', JSON.stringify(newRules));
+    const handleToggleStatus = async (id) => {
+        try {
+            const ruleToUpdate = rules.find(r => r.id === id);
+            if (!ruleToUpdate) return;
+
+            const newStatus = ruleToUpdate.status === 'Active' ? 'Paused' : 'Active';
+            // Optimistic update
+            const updatedRules = rules.map(rule =>
+                rule.id === id
+                    ? { ...rule, status: newStatus }
+                    : rule
+            );
+            setRules(updatedRules);
+
+            // API call
+            await api.updateRule(id, { ...ruleToUpdate, status: newStatus });
+            showToast(`Rule ${newStatus.toLowerCase()} successfully`, 'success');
+
+        } catch (error) {
+            console.error('Failed to toggle rule status:', error);
+            showToast('Failed to update rule status', 'error');
+            // Revert state by re-fetching or reverting
+            const response = await api.getRules();
+            setRules(Array.isArray(response) ? response : (response.data || []));
+        }
     };
 
-    const handleToggleStatus = (id) => {
-        const updatedRules = rules.map(rule =>
-            rule.id === id
-                ? { ...rule, status: rule.status === 'Active' ? 'Paused' : 'Active' }
-                : rule
-        );
-        saveRules(updatedRules);
-    };
-
-    const handleDeleteRule = (id) => {
+    const handleDeleteRule = async (id) => {
         if (window.confirm('Are you sure you want to delete this rule?')) {
-            const updatedRules = rules.filter(r => r.id !== id);
-            saveRules(updatedRules);
+            try {
+                // Optimistic update
+                const updatedRules = rules.filter(r => r.id !== id);
+                setRules(updatedRules);
+
+                // API call
+                await api.deleteRule(id);
+                showToast('Rule deleted successfully', 'success');
+            } catch (error) {
+                console.error('Failed to delete rule:', error);
+                showToast('Failed to delete rule', 'error');
+                // Revert state
+                const response = await api.getRules();
+                setRules(Array.isArray(response) ? response : (response.data || []));
+            }
         }
     };
 
@@ -120,7 +145,7 @@ const Rules = () => {
                 showToast('Rule updated successfully', 'success');
             } else {
                 const response = await api.createRule(ruleData);
-                const newRule = response.data;
+                const newRule = response.data || response; // Handle different response formats
                 setRules([...rules, newRule]);
 
                 // Trigger email notification

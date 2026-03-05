@@ -21,8 +21,8 @@ const DeviceCard = ({ id, id_label, name, health = 0, efficiency = '--', power =
                     <span className="ecard-id-sep">|</span>
                     <span className="ecard-name-sub">{name}</span>
                 </div>
-                <div className={`status-tag-minimal ${status.toLowerCase()}`}>
-                    <span>{status.toUpperCase()}</span>
+                <div className={`status-tag-minimal ${(status || 'unknown').toLowerCase()}`}>
+                    <span>{(status || 'unknown').toUpperCase()}</span>
                 </div>
             </div>
 

@@ -1,93 +1,308 @@
-import { mockDevices } from '../data/mockDevices';
+import axios from 'axios';
 import { auth, db } from '../config/firebase';
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { collection, getDocs, doc, getDoc, query, where, setDoc } from 'firebase/firestore';
 
-// Helper to get from storage or default (Legacy for Rules until migrated)
+const DEVICE_API = '/backend/device/api/v1';
+const DATA_API = '/backend/data/api/v1/data';
+const RULE_API = '/backend/rule-engine/api/v1';
+
+// Helpers
 const getStorage = (key, defaultVal) => {
     const saved = localStorage.getItem(key);
     return saved ? JSON.parse(saved) : defaultVal;
 };
 
-// Helper to set storage
 const setStorage = (key, val) => {
     localStorage.setItem(key, JSON.stringify(val));
+};
+
+// Internal helper to calculate metrics based on raw telemetry
+const calculateMetrics = (latest) => {
+    if (!latest) return {};
+
+    // Calculate realistic health based on metrics (matches backend logic)
+    let calcHealth = 100;
+    if (latest.temperature > 60) calcHealth -= (latest.temperature - 60) * 1.5;
+    if (latest.vibration > 5) calcHealth -= (latest.vibration - 5) * 5;
+    if (latest.pressure > 130) calcHealth -= (latest.pressure - 130);
+    calcHealth = Math.max(0, Math.min(100, Math.round(calcHealth)));
+
+    // Calculate realistic efficiency using Power Factor (Active / Apparent Power)
+    // Formula: (Power in Watts) / (Voltage * Current)
+    let calcEfficiency = 85;
+    if (latest.voltage && latest.current && latest.current > 0) {
+        const apparentPower = latest.voltage * latest.current;
+        // Normal power factor for industrial motors is 0.7 to 0.9
+        const powerFactor = latest.power / apparentPower;
+        calcEfficiency = Math.round(powerFactor * 100);
+        // Ensure it's in a realistic range (mostly between 70% and 98%)
+        calcEfficiency = Math.max(0, Math.min(100, calcEfficiency));
+    }
+
+    return {
+        power: latest.power,
+        power_usage: latest.power,
+        efficiency: latest.efficiency || calcEfficiency,
+        health: latest.health || latest.health_score || calcHealth,
+        healthScore: latest.health || latest.health_score || calcHealth,
+        temp: latest.temperature,
+        temperature: latest.temperature,
+        vibration: latest.vibration,
+        pressure: latest.pressure,
+        voltage: latest.voltage,
+        current: latest.current,
+        timestamp: latest.timestamp,
+        uptime: latest.uptime || 99.9,
+        enrichment_status: latest.enrichment_status
+    };
+};
+
+// Helper to fetch health score from backend for a specific telemetry packet
+const fetchHealthScore = async (deviceId, latest) => {
+    if (!latest) return null;
+    try {
+        const response = await axios.post(`${DEVICE_API}/devices/${deviceId}/health-score`, {
+            values: {
+                temperature: latest.temperature,
+                pressure: latest.pressure,
+                vibration: latest.vibration,
+                voltage: latest.voltage,
+                current: latest.current,
+                power: latest.power
+            },
+            machine_state: "RUNNING"
+        });
+        return response.data?.health_score;
+    } catch (e) {
+        console.warn(`Could not compute health score for ${deviceId} via API`);
+        return null;
+    }
 };
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const api = {
-    // Equipment (Mock for now)
+    // Equipment
     getEquipment: async () => {
-        await delay(500);
-        return { data: mockDevices };
+        try {
+            const response = await axios.get(`${DEVICE_API}/devices`);
+            const devices = response.data.data || [];
+
+            // Enrich with latest telemetry to populate Dashboard/List metrics
+            const enrichedData = await Promise.all(devices.map(async (device) => {
+                let telemetryData = {};
+                try {
+                    // ALERT: Must use limit=1 AND sort logic if API supports it, 
+                    // or just ensure we get the latest based on timestamp.
+                    // The data-service returns latest first by default if implemented correctly.
+                    const telRes = await axios.get(`${DATA_API}/telemetry/${device.device_id}?limit=1`);
+                    const items = telRes.data?.data?.items || telRes.data?.data || [];
+                    if (items.length > 0) {
+                        const latest = items[0];
+                        telemetryData = calculateMetrics(latest);
+
+                        // Try to get real health score from API
+                        const apiHealth = await fetchHealthScore(device.device_id, latest);
+                        if (apiHealth !== null) {
+                            telemetryData.health = apiHealth;
+                            telemetryData.healthScore = apiHealth;
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Could not fetch latest telemetry for ${device.device_id}`);
+                }
+
+                return {
+                    ...device,
+                    ...telemetryData,
+                    id: device.device_id,
+                    name: device.device_name,
+                    type: device.device_type,
+                    status: device.runtime_status || device.legacy_status || 'Unknown'
+                };
+            }));
+
+            return { ...response.data, data: enrichedData };
+        } catch (error) {
+            console.error("Error fetching equipment:", error);
+            throw error;
+        }
     },
     getEquipmentById: async (id) => {
-        await delay(300);
-        const device = mockDevices.find(d => d.id === id || d.fullId === id);
-        if (!device) throw new Error("Device not found");
+        try {
+            const response = await axios.get(`${DEVICE_API}/devices/${id}`);
+            const device = response.data.data;
+
+            // Enrich with latest telemetry
+            let telemetryStats = {};
+            try {
+                const telRes = await axios.get(`${DATA_API}/telemetry/${id}?limit=1`);
+                const items = telRes.data?.data?.items || telRes.data?.data || [];
+                if (items.length > 0) {
+                    const latest = items[0];
+                    telemetryStats = calculateMetrics(latest);
+
+                    // Try to get real health score from API
+                    const apiHealth = await fetchHealthScore(id, latest);
+                    if (apiHealth !== null) {
+                        telemetryStats.health = apiHealth;
+                        telemetryStats.healthScore = apiHealth;
+                    }
+                }
+            } catch (e) {
+                console.warn(`Could not fetch latest telemetry for ${id}`);
+            }
+
+            return {
+                data: {
+                    ...device,
+                    ...telemetryStats,
+                    id: device.device_id,
+                    name: device.device_name,
+                    type: device.device_type,
+                    status: device.runtime_status || device.legacy_status || 'Unknown',
+                    telemetry: []
+                }
+            };
+        } catch (error) {
+            console.error(`Error fetching device ${id}:`, error);
+            throw error;
+        }
+    },
+
+    // Telemetry
+    getTelemetry: async (equipmentId) => {
+        try {
+            const response = await axios.get(`${DATA_API}/telemetry/${equipmentId}`);
+            let items = [];
+            if (response.data?.data?.items) items = response.data.data.items;
+            else if (Array.isArray(response.data?.data)) items = response.data.data;
+            else if (Array.isArray(response.data)) items = response.data;
+
+            // Enrich historical points with calculated metrics
+            // (We keep using calculateMetrics here for performance)
+            const enrichedItems = items.map(item => calculateMetrics(item));
+
+            return { data: enrichedItems };
+        } catch (error) {
+            console.error(`Error fetching telemetry for ${equipmentId}:`, error);
+            return { data: [] };
+        }
+    },
+
+    // Rules
+    getRules: async () => {
+        try {
+            const response = await axios.get(`${RULE_API}/rules`);
+            const items = response.data?.data || [];
+
+            // Map backend rules to frontend schema
+            const mappedRules = items.map(r => {
+                const metricDisplay = r.property ? (r.property.charAt(0).toUpperCase() + r.property.slice(1)) : 'Temperature';
+                let opDisplay = r.condition || '>';
+                if (opDisplay === '=') opDisplay = '==';
+
+                const conditionString = `${metricDisplay} ${opDisplay} ${r.threshold}`;
+                let devicesDisplay = "All Machines";
+                if (r.scope === 'selected_devices' && r.device_ids && r.device_ids.length > 0) {
+                    devicesDisplay = r.device_ids.join(', ');
+                }
+
+                return {
+                    id: r.rule_id,
+                    name: r.rule_name,
+                    devices: devicesDisplay,
+                    condition: conditionString,
+                    status: r.status === 'active' ? 'Active' : 'Paused',
+                    type: ['temperature', 'pressure'].includes((r.property || '').toLowerCase()) ? 'danger' : 'warning',
+                    icon: (r.property || '').toLowerCase() === 'temperature' ? 'Flame' : ((r.property || '').toLowerCase() === 'pressure' ? 'Droplet' : 'Zap'),
+                    metric: metricDisplay,
+                    operator: opDisplay,
+                    value: r.threshold,
+                    target: r.scope === 'all_devices' ? 'All Machines' : 'Specific Devices',
+                    conditions: [{ metric: metricDisplay, operator: opDisplay, value: r.threshold, logic: 'AND' }]
+                };
+            });
+
+            return { data: mappedRules };
+        } catch (error) {
+            console.error("Error fetching rules:", error);
+            return { data: [] };
+        }
+    },
+
+    createRule: async (ruleData) => {
+        // Map frontend ruleData to backend RuleCreate schema
+        const scope = ruleData.target === 'All Machines' ? 'all_devices' : 'selected_devices';
+        let device_ids = [];
+        if (scope === 'selected_devices' && ruleData.devices) {
+            device_ids = [ruleData.devices.split('-')[0]];
+        }
+
+        let op = ruleData.operator;
+        if (op === '==') op = '=';
+
+        const backendPayload = {
+            rule_name: ruleData.name,
+            description: ruleData.condition || "Created via UI",
+            scope: scope,
+            property: ruleData.metric ? ruleData.metric.toLowerCase() : "temperature",
+            condition: op || ">",
+            threshold: parseFloat(ruleData.value) || 0.0,
+            notification_channels: ["email"],
+            cooldown_minutes: 15,
+            device_ids: device_ids
+        };
+
+        const response = await axios.post(`${RULE_API}/rules`, backendPayload);
+        const createdRule = response.data.data || response.data;
+
         return {
             data: {
-                ...device,
-                telemetry: Array.from({ length: 20 }, (_, i) => ({
-                    id: i,
-                    timestamp: new Date(Date.now() - i * 3600000).toISOString(),
-                    pressure: device.metrics?.pressure?.value || 100,
-                    temperature: device.metrics?.temperature?.value || 80,
-                    vibration: device.metrics?.vibration?.value || 2,
-                    power_consumption: device.metrics?.power?.value || 5,
-                    efficiency_pct: device.efficiency || 85
-                }))
+                ...ruleData,
+                id: createdRule.rule_id,
+                status: 'Active'
             }
         };
     },
 
-    // Telemetry (Mock data)
-    getTelemetry: async (equipmentId) => {
-        await delay(300);
-        return {
-            data: Array.from({ length: 50 }, (_, i) => ({
-                id: i,
-                timestamp: new Date(Date.now() - i * 60000).toISOString(),
-                pressure: 120 + Math.random() * 10,
-                temperature: 85 + Math.random() * 5,
-                vibration: 2 + Math.random(),
-                power_consumption: 10 + Math.random() * 2,
-                efficiency_pct: 90 + Math.random() * 5
-            }))
-        };
-    },
-
-    // Rules (LocalStorage for now)
-    getRules: async () => {
-        await delay(400);
-        const rules = getStorage('factoryops_rules', []);
-        return { data: rules };
-    },
-
-    createRule: async (ruleData) => {
-        await delay(600);
-        const rules = getStorage('factoryops_rules', []);
-        const newRule = { ...ruleData, id: Date.now(), status: 'Active' };
-        rules.push(newRule);
-        setStorage('factoryops_rules', rules);
-        return { data: newRule };
-    },
-
     updateRule: async (id, ruleData) => {
-        await delay(400);
-        let rules = getStorage('factoryops_rules', []);
-        rules = rules.map(r => r.id === id ? { ...r, ...ruleData } : r);
-        setStorage('factoryops_rules', rules);
-        return { data: { ...ruleData, id } };
+        const scope = ruleData.target === 'All Machines' ? 'all_devices' : 'selected_devices';
+        let device_ids = [];
+        if (scope === 'selected_devices' && ruleData.devices) {
+            device_ids = [ruleData.devices.split('-')[0]];
+        }
+
+        let op = ruleData.operator;
+        if (op === '==') op = '=';
+
+        const backendPayload = {
+            rule_name: ruleData.name,
+            description: ruleData.condition,
+            scope: scope,
+            property: ruleData.metric ? ruleData.metric.toLowerCase() : "temperature",
+            condition: op || ">",
+            threshold: parseFloat(ruleData.value) || 0.0,
+            notification_channels: ["email"],
+            device_ids: device_ids
+        };
+
+        // Do PUT
+        await axios.put(`${RULE_API}/rules/${id}`, backendPayload);
+
+        // Do PATCH for status if status is provided in ruleData
+        if (ruleData.status) {
+            const statusVal = ruleData.status === 'Active' ? 'active' : 'paused';
+            await axios.patch(`${RULE_API}/rules/${id}/status`, { status: statusVal });
+        }
+
+        return { data: ruleData };
     },
 
     deleteRule: async (id) => {
-        await delay(300);
-        let rules = getStorage('factoryops_rules', []);
-        rules = rules.filter(r => r.id !== id);
-        setStorage('factoryops_rules', rules);
-        return { data: { success: true } };
+        const response = await axios.delete(`${RULE_API}/rules/${id}`);
+        return response.data;
     },
 
     // Users (Firestore)
@@ -239,77 +454,102 @@ export const api = {
 
     // Chatbot
     chat: async (message) => {
-        await delay(600 + Math.random() * 600); // Simulate thinking
+        try {
+            const lowerMsg = message.toLowerCase();
 
-        const lowerMsg = message.toLowerCase();
-        let response = "I'm not sure about that specific detail. Try asking about **machine status**, **power**, **production**, or **safety**.";
+            // 1. Fetch devices to have context
+            const devicesRes = await axios.get(`${DEVICE_API}/devices`);
+            const devices = devicesRes.data?.data || [];
 
-        // Keywords
-        const isStatus = lowerMsg.includes('status') || lowerMsg.includes('health') || lowerMsg.includes('condition');
-        const isPower = lowerMsg.includes('power') || lowerMsg.includes('energy') || lowerMsg.includes('consumption');
-        const isProd = lowerMsg.includes('production') || lowerMsg.includes('output') || lowerMsg.includes('yield');
+            // 2. Try to identify a specific device mentioned
+            const mentionedDevice = devices.find(d =>
+                lowerMsg.includes(d.device_id.toLowerCase()) ||
+                lowerMsg.includes(d.device_name.toLowerCase())
+            );
 
-        // Machine Detection
-        const isD1 = lowerMsg.includes('d1') || lowerMsg.includes('compressor-01') || lowerMsg.includes('compressor 1');
-        const isD2 = lowerMsg.includes('d2') || lowerMsg.includes('compressor-02') || lowerMsg.includes('compressor 2');
-        const isD3 = lowerMsg.includes('d3') || lowerMsg.includes('boiler') || lowerMsg.includes('boiler-03');
+            let response = "";
 
-        // Logic Router
-        if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
-            response = "Hello! I'm your FactoryOps assistant. I can help with machine status, production stats, and safety alerts.";
-        }
-
-        // Machine Specific Queries
-        else if (isD1) {
-            if (isStatus) response = "**Compressor-01** (D1) is **Running** normally with 92% health.";
-            else if (isPower) response = "**Compressor-01** is consuming **4.2 kW** (Optimal).";
-            else if (isProd || lowerMsg.includes('efficiency')) response = "**Compressor-01** is running at **87% efficiency**.";
-            else response = "**Compressor-01** is online and operating within normal parameters.";
-        }
-        else if (isD2) {
-            if (isStatus) response = "⚠️ **Compressor-02** (D2) exceeds vibration limits (5.1 MM/S). User attention required.";
-            else if (isPower) response = "**Compressor-02** is consuming **3.8 kW**.";
-            else if (isProd || lowerMsg.includes('efficiency')) response = "**Compressor-02** efficiency has dropped to **62%** due to vibration issues.";
-            else response = "⚠️ **Compressor-02** is in a **Warning** state. Please check vibration levels.";
-        }
-        else if (isD3) {
-            if (isStatus) response = "**Boiler-03** (D3) is **Running** at 78% health. Pressure is stable at 95 PSI.";
-            else if (isPower) response = "**Boiler-03** is consuming **12.5 kW**.";
-            else response = "**Boiler-03** is operating normally. Scheduled maintenance is due on Friday.";
-        }
-
-        // General Queries
-        else if (lowerMsg.includes('offline') || lowerMsg.includes('down') || lowerMsg.includes('warning')) {
-            response = "Currently, **Compressor-02** is in **Warning** state. All other systems are nominal.";
-        }
-        else if (isPower) {
-            response = "Total plant power consumption is **20.5 kW**.\n• Compressor-01: 4.2 kW\n• Compressor-02: 3.8 kW\n• Boiler-03: 12.5 kW";
-        }
-        else if (lowerMsg.includes('supervisor') || lowerMsg.includes('contact')) {
-            response = "The current shift supervisor is **Sarah Chen** (Ext. 4022).";
-        }
-        else if (isProd) {
-            response = "Current output is **1,240 units/hour** (98% of target). Daily quota: 10,000 units.";
-        }
-        else if (lowerMsg.includes('safety') || lowerMsg.includes('accident') || lowerMsg.includes('incident')) {
-            response = "⚠️ **Safety Alert**: High vibration detected in **Compressor-02**. Maintenance team notified.";
-        }
-        else if (lowerMsg.includes('maintenance') || lowerMsg.includes('ticket')) {
-            response = "Active Tickets:\n1. Compressor-02 (Vibration) - Urgent\n2. Boiler-03 (Inspection) - Friday";
-        }
-        else if (lowerMsg.includes('efficiency')) {
-            response = "Average Plant Efficiency: **89%**.\nTop: Compressor-01 (87%)\nLow: Compressor-02 (62%)";
-        }
-        else if (isStatus) {
-            response = "System Status:\n✅ Compressor-01: Online\n⚠️ Compressor-02: Warning\n✅ Boiler-03: Online";
-        }
-
-        return {
-            data: {
-                reply: response,
-                timestamp: new Date().toISOString()
+            // 3. Operational Logic Router
+            if (lowerMsg.includes('shift')) {
+                if (mentionedDevice) {
+                    const shiftRes = await axios.get(`${DEVICE_API}/devices/${mentionedDevice.device_id}/shifts`);
+                    const shifts = shiftRes.data?.data || [];
+                    if (shifts.length > 0) {
+                        const shiftDetails = shifts.map(s => `• **${s.shift_name}**: ${s.shift_start} - ${s.shift_end}`).join('\n');
+                        response = `The shift schedule for **${mentionedDevice.device_name}** is:\n${shiftDetails}`;
+                    } else {
+                        response = `There are no specific shifts configured for **${mentionedDevice.device_name}** yet.`;
+                    }
+                } else {
+                    response = "Which machine are you asking about? I can show shifts for Boiler-04, D6, etc.";
+                }
             }
-        };
+            else if (lowerMsg.includes('uptime')) {
+                if (mentionedDevice) {
+                    const uptimeRes = await axios.get(`${DEVICE_API}/devices/${mentionedDevice.device_id}/uptime`);
+                    const u = uptimeRes.data;
+                    if (u.uptime_percentage !== null) {
+                        response = `The current uptime for **${mentionedDevice.device_name}** is **${u.uptime_percentage}%** based on ${u.shifts_configured} configured shifts.`;
+                    } else {
+                        response = `Uptime for **${mentionedDevice.device_name}** is not yet calculated (Requires shift configuration). ${u.message}`;
+                    }
+                } else {
+                    response = "Please specify a machine ID or name to check Its uptime (e.g., 'Uptime for Boiler-04').";
+                }
+            }
+            else if (lowerMsg.includes('status') || lowerMsg.includes('health') || lowerMsg.includes('how is')) {
+                if (mentionedDevice) {
+                    // Get latest telemetry for this device
+                    const telRes = await axios.get(`${DATA_API}/telemetry/${mentionedDevice.device_id}?limit=1`);
+                    const latest = (telRes.data?.data?.items || telRes.data?.data || [])[0];
+
+                    if (latest) {
+                        const metrics = calculateMetrics(latest);
+                        response = `**${mentionedDevice.device_name}** is currently **${mentionedDevice.runtime_status || 'Online'}**.\n• Health: ${metrics.health}%\n• Efficiency: ${metrics.efficiency}%\n• Temp: ${metrics.temp}°C\n• Power: ${metrics.power}W`;
+                    } else {
+                        response = `**${mentionedDevice.device_name}** is registered but I haven't received any telemetry data recently.`;
+                    }
+                } else if (lowerMsg.includes('overall') || lowerMsg.includes('factory') || lowerMsg.includes('all')) {
+                    const totals = await api.getEquipment();
+                    const avgH = Math.round(totals.data.reduce((acc, d) => acc + (Number(d.health) || 0), 0) / totals.data.length);
+                    const avgE = Math.round(totals.data.reduce((acc, d) => acc + (Number(d.efficiency) || 0), 0) / totals.data.length);
+                    response = `Factory Overview:\n• Total Machines: ${totals.data.length}\n• System Health: ${avgH}%\n• Avg Efficiency: ${avgE}%`;
+                } else {
+                    response = "I can give you the status of specific machines or an overall factory summary. Try 'Status of Boiler-04' or 'Factory health'.";
+                }
+            }
+            else if (lowerMsg.includes('maintenance')) {
+                const warns = devices.filter(d => (d.health < 70 || d.runtime_status === 'Warning' || d.runtime_status === 'Critical'));
+                if (warns.length > 0) {
+                    const list = warns.map(d => `• **${d.device_name}** (Health: ${d.health || '??'}%)`).join('\n');
+                    response = `The following machines need attention:\n${list}`;
+                } else {
+                    response = "All systems are currently operating within nominal parameters. No immediate maintenance required.";
+                }
+            }
+            else if (lowerMsg.includes('hello') || lowerMsg.includes('hi') || lowerMsg.includes('hey')) {
+                response = "Hello! I'm your FactoryOps assistant. Ask me about machine status, shifts, or uptime. For example: 'What are the shifts for D6?'";
+            }
+            else {
+                response = "I can help with operational queries. Try asking about:\n• **Machine Status**: 'Status of Boiler-04'\n• **Shifts**: 'Are there any shifts for D6?'\n• **Uptime**: 'Uptime for Boiler-01'\n• **Maintenance**: 'Which machines need help?'";
+            }
+
+            return {
+                data: {
+                    reply: response,
+                    timestamp: new Date().toISOString()
+                }
+            };
+
+        } catch (error) {
+            console.error("Chatbot logic error:", error);
+            return {
+                data: {
+                    reply: "I encountered an error while fetching live factory data. Please ensure all backend services are reachable.",
+                    timestamp: new Date().toISOString()
+                }
+            };
+        }
     }
 };
 

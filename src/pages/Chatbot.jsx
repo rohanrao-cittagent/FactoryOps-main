@@ -9,7 +9,7 @@ const Chatbot = () => {
         {
             id: 1,
             sender: 'bot',
-            text: "Hello! I'm your FactoryOps AI assistant. I can help you with machine status, alerts, efficiency reports, and more. How can I assist you today?",
+            text: "Hello! I'm your FactoryOps AI assistant. You can ask me about machine status, shifts, uptime, and efficiency across the factory. How can I help you today?",
             timestamp: new Date().toISOString()
         }
     ]);
@@ -22,14 +22,11 @@ const Chatbot = () => {
     };
 
     const suggestions = [
-        "Status of Compressor-02?",
-        "Total plant power usage?",
-        "Who is the shift supervisor?",
-        "Production output?",
-        "Active safety alerts?",
-        "How to reset emergency stop?",
-        "Maintenance tickets?",
-        "Efficiency of Compressor-01?"
+        "Status of Boiler-04?",
+        "What are the shifts for D6?",
+        "Show me uptime for Boiler-04",
+        "Which machines need maintenance?",
+        "Overall factory efficiency?"
     ];
 
     const handleSuggestionClick = (suggestion) => {
