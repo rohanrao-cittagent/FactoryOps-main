@@ -52,8 +52,13 @@ const ShiftModal = ({ isOpen, onClose, onSave, deviceId }) => {
                     >
                         <header className="modal-header">
                             <div className="header-title">
-                                <Clock size={20} className="text-accent" />
-                                <h2>Add Shift Configuration</h2>
+                                <div className="header-icon-box">
+                                    <Clock size={20} className="text-accent" />
+                                </div>
+                                <div className="header-text-stack">
+                                    <h2>Add Shift Configuration</h2>
+                                    <p className="header-subtitle">Set operating hours and maintenance breaks</p>
+                                </div>
                             </div>
                             <button className="close-btn" onClick={onClose}>
                                 <X size={20} />
@@ -61,77 +66,92 @@ const ShiftModal = ({ isOpen, onClose, onSave, deviceId }) => {
                         </header>
 
                         <form onSubmit={handleSubmit} className="modal-form">
-                            <div className="form-group">
-                                <label>Shift Name</label>
-                                <input
-                                    type="text"
-                                    value={shiftName}
-                                    onChange={(e) => setShiftName(e.target.value)}
-                                    placeholder="e.g., Morning Shift"
-                                    className="modal-input"
-                                />
-                            </div>
+                            <section className="form-section">
+                                <span className="section-title">Identity & Role</span>
+                                <div className="form-group">
+                                    <label>Shift Name</label>
+                                    <div className="input-with-icon">
+                                        <Clock size={16} className="input-icon" />
+                                        <input
+                                            type="text"
+                                            value={shiftName}
+                                            onChange={(e) => setShiftName(e.target.value)}
+                                            placeholder="e.g., Morning Shift"
+                                            className="modal-input"
+                                        />
+                                    </div>
+                                </div>
+                            </section>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Start Time</label>
-                                    <input
-                                        type="time"
-                                        value={startTime}
-                                        onChange={(e) => setStartTime(e.target.value)}
-                                        className="modal-input"
-                                    />
+                            <section className="form-section">
+                                <span className="section-title">Schedule Settings</span>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Start Time</label>
+                                        <input
+                                            type="time"
+                                            value={startTime}
+                                            onChange={(e) => setStartTime(e.target.value)}
+                                            className="modal-input"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>End Time</label>
+                                        <input
+                                            type="time"
+                                            value={endTime}
+                                            onChange={(e) => setEndTime(e.target.value)}
+                                            className="modal-input"
+                                        />
+                                    </div>
                                 </div>
-                                <div className="form-group">
-                                    <label>End Time</label>
-                                    <input
-                                        type="time"
-                                        value={endTime}
-                                        onChange={(e) => setEndTime(e.target.value)}
-                                        className="modal-input"
-                                    />
-                                </div>
-                            </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Maintenance Break (min)</label>
-                                    <input
-                                        type="number"
-                                        value={breakMinutes}
-                                        onChange={(e) => setBreakMinutes(e.target.value)}
-                                        className="modal-input"
-                                        min="0"
-                                    />
+                                <div className="form-row" style={{ marginTop: '0.5rem' }}>
+                                    <div className="form-group">
+                                        <label>Maintenance (min)</label>
+                                        <input
+                                            type="number"
+                                            value={breakMinutes}
+                                            onChange={(e) => setBreakMinutes(e.target.value)}
+                                            className="modal-input"
+                                            min="0"
+                                        />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Day of Week</label>
+                                        <div className="input-with-icon">
+                                            <Calendar size={16} className="input-icon" />
+                                            <select
+                                                value={dayOfWeek === null ? 'all' : dayOfWeek}
+                                                onChange={(e) => setDayOfWeek(e.target.value)}
+                                                className="modal-input"
+                                            >
+                                                <option value="all">Every Day</option>
+                                                {DAYS.map((day, idx) => (
+                                                    <option key={idx} value={idx}>{day}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="form-group">
-                                    <label>Day of Week</label>
-                                    <select
-                                        value={dayOfWeek === null ? 'all' : dayOfWeek}
-                                        onChange={(e) => setDayOfWeek(e.target.value)}
-                                        className="modal-input"
-                                    >
-                                        <option value="all">All Days</option>
-                                        {DAYS.map((day, idx) => (
-                                            <option key={idx} value={idx}>{day}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
+                            </section>
 
-                            <div className="form-checkbox">
+                            <div className="form-checkbox-custom">
                                 <input
                                     type="checkbox"
                                     id="shift-active"
                                     checked={isActive}
                                     onChange={(e) => setIsActive(e.target.checked)}
                                 />
-                                <label htmlFor="shift-active">Active</label>
+                                <label htmlFor="shift-active">
+                                    <span className="checkbox-label">Mark as Active</span>
+                                    <span className="checkbox-sub">Enable this shift immediately after saving</span>
+                                </label>
                             </div>
 
                             <footer className="modal-footer">
-                                <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                                <button type="submit" className="btn-primary">Save Shift</button>
+                                <button type="button" className="btn-secondary-glass" onClick={onClose}>Cancel</button>
+                                <button type="submit" className="btn-primary-neon">Save Shift</button>
                             </footer>
                         </form>
                     </motion.div>

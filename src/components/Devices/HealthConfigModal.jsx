@@ -63,8 +63,13 @@ const HealthConfigModal = ({ isOpen, onClose, onSave, deviceId, weightRemaining 
                     >
                         <header className="modal-header">
                             <div className="header-title">
-                                <Activity size={20} className="text-accent" />
-                                <h2>Add Health Condition</h2>
+                                <div className="header-icon-box">
+                                    <Activity size={20} className="text-accent" />
+                                </div>
+                                <div className="header-text-stack">
+                                    <h2>Health Scoring Config</h2>
+                                    <p className="header-subtitle">Define parameters for automated health analysis</p>
+                                </div>
                             </div>
                             <button className="close-btn" onClick={onClose}>
                                 <X size={20} />
@@ -72,18 +77,23 @@ const HealthConfigModal = ({ isOpen, onClose, onSave, deviceId, weightRemaining 
                         </header>
 
                         <form onSubmit={handleSubmit} className="modal-form">
-                            <div className="form-group">
-                                <label>Parameter Name</label>
-                                <select
-                                    value={parameterName}
-                                    onChange={(e) => setParameterName(e.target.value)}
-                                    className="modal-input"
-                                >
-                                    {COMMON_METRICS.map(m => (
-                                        <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
-                                    ))}
-                                </select>
-                            </div>
+                            <section className="form-section">
+                                <span className="section-title">Telemetry Parameter</span>
+                                <div className="form-group">
+                                    <div className="input-with-icon">
+                                        <Target size={16} className="input-icon" />
+                                        <select
+                                            value={parameterName}
+                                            onChange={(e) => setParameterName(e.target.value)}
+                                            className="modal-input"
+                                        >
+                                            {COMMON_METRICS.map(m => (
+                                                <option key={m} value={m}>{m.charAt(0).toUpperCase() + m.slice(1)}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+                            </section>
 
                             <section className="form-section">
                                 <span className="section-title">Normal Range (Green Zone)</span>
@@ -141,32 +151,45 @@ const HealthConfigModal = ({ isOpen, onClose, onSave, deviceId, weightRemaining 
                                 </div>
                             </section>
 
-                            <div className="form-group">
-                                <label>Weight Impact (%) - <span className="hint">Remaining: {weightRemaining.toFixed(1)}%</span></label>
-                                <input
-                                    type="number"
-                                    value={weight}
-                                    onChange={(e) => setWeight(e.target.value)}
-                                    placeholder="Weight (0-100)"
-                                    className="modal-input"
-                                    max={weightRemaining}
-                                    min="0"
-                                />
-                            </div>
+                            <section className="form-section">
+                                <span className="section-title">Impact Scoring</span>
+                                <div className="form-group">
+                                    <label>Scoring Weight (%)</label>
+                                    <div className="input-with-icon">
+                                        <ShieldAlert size={16} className="input-icon" />
+                                        <input
+                                            type="number"
+                                            value={weight}
+                                            onChange={(e) => setWeight(e.target.value)}
+                                            placeholder={`Max ${weightRemaining.toFixed(1)}%`}
+                                            className="modal-input"
+                                            max={weightRemaining}
+                                            min="0"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="weight-summary">
+                                    <span className="weight-info-label">Remaining available capacity</span>
+                                    <span className="weight-info-value">{weightRemaining.toFixed(1)}%</span>
+                                </div>
+                            </section>
 
-                            <div className="form-checkbox">
+                            <div className="form-checkbox-custom">
                                 <input
                                     type="checkbox"
                                     id="health-active"
                                     checked={isActive}
                                     onChange={(e) => setIsActive(e.target.checked)}
                                 />
-                                <label htmlFor="health-active">Include in health score</label>
+                                <label htmlFor="health-active">
+                                    <span className="checkbox-label">Include in Health Score</span>
+                                    <span className="checkbox-sub">Telemetery will contribute to real-time status</span>
+                                </label>
                             </div>
 
                             <footer className="modal-footer">
-                                <button type="button" className="btn-secondary" onClick={onClose}>Cancel</button>
-                                <button type="submit" className="btn-primary">Add Parameter</button>
+                                <button type="button" className="btn-secondary-glass" onClick={onClose}>Cancel</button>
+                                <button type="submit" className="btn-primary-neon">Deploy Parameter</button>
                             </footer>
                         </form>
                     </motion.div>

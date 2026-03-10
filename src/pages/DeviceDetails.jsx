@@ -698,9 +698,12 @@ const DeviceDetails = () => {
                                                 </div>
                                             ))
                                         ) : (
-                                            <div className="empty-state-hub">
-                                                <AlertCircle size={24} />
-                                                <p>No rules configured for this device.</p>
+                                            <div className="empty-state-simple">
+                                                <div className="empty-icon-circle">
+                                                    <AlertCircle size={32} />
+                                                </div>
+                                                <p>No automation rules found</p>
+                                                <span className="empty-subtext">Add a rule to automatically handle device events and alerts</span>
                                             </div>
                                         )}
                                     </div>
@@ -711,49 +714,65 @@ const DeviceDetails = () => {
                                 <div className="device-configurations-grid">
                                     <section className="config-box">
                                         <div className="config-header">
+                                            <div className="header-icon-box">
+                                                <Clock size={20} className="text-accent" />
+                                            </div>
                                             <div className="p-title-stack">
                                                 <h4>Shift Configuration</h4>
                                                 <p>Manage device operating shifts and maintenance windows</p>
                                             </div>
                                         </div>
                                         <div className="config-body">
-                                            <table className="config-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Name</th>
-                                                        <th>Start</th>
-                                                        <th>End</th>
-                                                        <th>Break (min)</th>
-                                                        <th>Day</th>
-                                                        <th>Active</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {shifts.length > 0 ? shifts.map(shift => (
-                                                        <tr key={shift.id}>
-                                                            <td>{shift.shift_name}</td>
-                                                            <td>{shift.shift_start}</td>
-                                                            <td>{shift.shift_end}</td>
-                                                            <td>{shift.maintenance_break_minutes}</td>
-                                                            <td>{shift.day_of_week === null ? 'All Days' : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][shift.day_of_week]}</td>
-                                                            <td>{shift.is_active ? 'Yes' : 'No'}</td>
-                                                            <td>
+                                            <div className="config-list">
+                                                {shifts.length > 0 ? shifts.map(shift => (
+                                                    <motion.div
+                                                        key={shift.id}
+                                                        className="config-item-card glass-panel"
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                    >
+                                                        <div className="c-item-header">
+                                                            <div className="c-item-title-group">
+                                                                <Clock size={16} className="text-accent" />
+                                                                <span className="c-item-name">{shift.shift_name}</span>
+                                                            </div>
+                                                            <div className="c-item-actions">
+                                                                <div className={`status-badge-mini ${shift.is_active ? 'active' : 'inactive'}`}>
+                                                                    {shift.is_active ? 'ACTIVE' : 'INACTIVE'}
+                                                                </div>
                                                                 <button className="delete-btn-tiny" onClick={() => handleDeleteShift(shift.id)}>
                                                                     <Trash2 size={14} />
                                                                 </button>
-                                                            </td>
-                                                        </tr>
-                                                    )) : (
-                                                        <tr>
-                                                            <td colSpan="7" className="empty-row">No shifts configured.</td>
-                                                        </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                            <button className="add-config-btn" onClick={() => setShowShiftModal(true)}>
+                                                            </div>
+                                                        </div>
+                                                        <div className="c-item-details">
+                                                            <div className="c-detail-row">
+                                                                <span className="c-detail-label">TIME</span>
+                                                                <span className="c-detail-value">{shift.shift_start} — {shift.shift_end}</span>
+                                                            </div>
+                                                            <div className="c-detail-row">
+                                                                <span className="c-detail-label">SCHEDULE</span>
+                                                                <span className="c-detail-value">{shift.day_of_week === null ? 'All Days' : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'][shift.day_of_week]}</span>
+                                                            </div>
+                                                            <div className="c-detail-row">
+                                                                <span className="c-detail-label">BREAK</span>
+                                                                <span className="c-detail-value">{shift.maintenance_break_minutes} mins</span>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )) : (
+                                                    <div className="empty-state-simple">
+                                                        <div className="empty-icon-circle">
+                                                            <Clock size={32} />
+                                                        </div>
+                                                        <p>Ready to define operational windows?</p>
+                                                        <span className="empty-subtext">Add a shift to start tracking performance against schedule</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button className="add-config-btn-neon" onClick={() => setShowShiftModal(true)}>
                                                 <Plus size={16} />
-                                                <span>Add Shift</span>
+                                                <span>Add operating shift</span>
                                             </button>
                                         </div>
                                     </section>
@@ -764,6 +783,9 @@ const DeviceDetails = () => {
                                 <div className="device-configurations-grid">
                                     <section className="config-box">
                                         <div className="config-header">
+                                            <div className="header-icon-box">
+                                                <Activity size={20} className="text-accent" />
+                                            </div>
                                             <div className="p-title-stack">
                                                 <h4>Health Parameter Configuration</h4>
                                                 <p>Configure weights and thresholds for health scoring</p>
@@ -776,39 +798,52 @@ const DeviceDetails = () => {
                                             </div>
                                         </div>
                                         <div className="config-body">
-                                            <table className="config-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th>Parameter</th>
-                                                        <th>Normal Range</th>
-                                                        <th>Critical Range</th>
-                                                        <th>Weight (%)</th>
-                                                        <th>Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    {healthConfigs.length > 0 ? healthConfigs.map(config => (
-                                                        <tr key={config.id}>
-                                                            <td>{config.parameter_name}</td>
-                                                            <td>{config.normal_min} - {config.normal_max}</td>
-                                                            <td>{config.max_min} - {config.max_max}</td>
-                                                            <td>{config.weight}%</td>
-                                                            <td>
+                                            <div className="config-list">
+                                                {healthConfigs.length > 0 ? healthConfigs.map(config => (
+                                                    <motion.div
+                                                        key={config.id}
+                                                        className="config-item-card glass-panel"
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                    >
+                                                        <div className="c-item-header">
+                                                            <div className="c-item-title-group">
+                                                                <Activity size={16} className="text-accent" />
+                                                                <span className="c-item-name">{config.parameter_name}</span>
+                                                            </div>
+                                                            <div className="c-item-actions">
+                                                                <div className="weight-badge">
+                                                                    {config.weight}% weight
+                                                                </div>
                                                                 <button className="delete-btn-tiny" onClick={() => handleDeleteHealthConfig(config.id)}>
                                                                     <Trash2 size={14} />
                                                                 </button>
-                                                            </td>
-                                                        </tr>
-                                                    )) : (
-                                                        <tr>
-                                                            <td colSpan="5" className="empty-row">No parameters configured.</td>
-                                                        </tr>
-                                                    )}
-                                                </tbody>
-                                            </table>
-                                            <button className="add-config-btn" onClick={() => setShowHealthModal(true)}>
+                                                            </div>
+                                                        </div>
+                                                        <div className="c-item-details-grid">
+                                                            <div className="c-detail-block">
+                                                                <span className="c-detail-label">NORMAL RANGE</span>
+                                                                <span className="c-detail-value status-success">{config.normal_min} — {config.normal_max}</span>
+                                                            </div>
+                                                            <div className="c-detail-block">
+                                                                <span className="c-detail-label">CRITICAL RANGE</span>
+                                                                <span className="c-detail-value status-error">{config.max_min} — {config.max_max}</span>
+                                                            </div>
+                                                        </div>
+                                                    </motion.div>
+                                                )) : (
+                                                    <div className="empty-state-simple">
+                                                        <div className="empty-icon-circle">
+                                                            <Activity size={32} />
+                                                        </div>
+                                                        <p>No active health parameters</p>
+                                                        <span className="empty-subtext">Configure parameters to enable real-time health scoring</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <button className="add-config-btn-neon" onClick={() => setShowHealthModal(true)}>
                                                 <Plus size={16} />
-                                                <span>Add Parameter</span>
+                                                <span>Add parameter config</span>
                                             </button>
                                         </div>
                                     </section>

@@ -1485,3 +1485,302 @@
     border-color: #cbd5e1;
     color: #6366f1;
 }
+
+/* Glass Configuration Cards */
+.config-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.config-item-card {
+    padding: 1.5rem;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.config-item-card:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--accent-primary);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-luminous);
+}
+
+.c-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.c-item-title-group {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.c-item-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+.c-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.status-badge-mini {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.35rem 0.75rem;
+    border-radius: 100px;
+    letter-spacing: 0.05em;
+}
+
+.status-badge-mini.active {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.status-badge-mini.inactive {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.weight-badge {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.35rem 0.75rem;
+    border-radius: 100px;
+    border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.c-item-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.c-item-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.c-detail-row,
+.c-detail-block {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.c-detail-label {
+    font-size: 0.65rem;
+    font-weight: 800;
+    color: var(--text-secondary);
+    letter-spacing: 0.1em;
+    opacity: 0.6;
+}
+
+.c-detail-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.c-detail-value.status-success {
+    color: #34d399;
+}
+
+.c-detail-value.status-error {
+    color: #f87171;
+}
+
+.device-configurations-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    margin-top: 2rem;
+}
+
+.config-box {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.4), rgba(15, 23, 42, 0.5));
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 32px;
+    padding: 2.5rem;
+    box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.config-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.p-title-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.p-title-stack h4 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+}
+
+.p-title-stack p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.empty-state-simple {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 5rem 2rem;
+    background: rgba(255, 255, 255, 0.01);
+    border: 1px dashed rgba(255, 255, 255, 0.08);
+    border-radius: 32px;
+    text-align: center;
+}
+
+.empty-icon-circle {
+    width: 80px;
+    height: 80px;
+    background: rgba(99, 102, 241, 0.05);
+    border: 1px solid rgba(99, 102, 241, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+    color: var(--accent-primary);
+    box-shadow: 0 0 30px rgba(99, 102, 241, 0.1);
+}
+
+.empty-state-simple p {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 0;
+}
+
+.empty-subtext {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    max-width: 300px;
+}
+
+.add-config-btn-neon {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1.75rem;
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 14px;
+    color: #a5b4fc;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-premium);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    align-self: flex-start;
+}
+
+.add-config-btn-neon:hover {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-neon-blue);
+    color: white;
+}
+
+:root.light .config-box {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+:root.light .config-header {
+    border-color: #f1f5f9;
+}
+
+:root.light .p-title-stack h4 {
+    color: #1e293b;
+}
+
+:root.light .p-title-stack p {
+    color: #64748b;
+    opacity: 0.8;
+}
+
+:root.light .config-item-card {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+:root.light .c-item-name {
+    color: #1e293b;
+}
+
+:root.light .c-detail-label {
+    color: #94a3b8;
+}
+
+:root.light .c-detail-value {
+    color: #475569;
+}
+
+:root.light .empty-state-simple {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+:root.light .empty-icon-circle {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: var(--accent-primary);
+}
+
+:root.light .empty-state-simple p {
+    color: #1e293b;
+}
+
+:root.light .empty-subtext {
+    color: #64748b;
+}
+
+:root.light .add-config-btn-neon {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #4f46e5;
+}
