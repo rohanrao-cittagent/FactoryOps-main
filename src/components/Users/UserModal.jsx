@@ -1,21 +1,41 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Shield } from 'lucide-react';
+import { X, User, Mail, Shield, Lock } from 'lucide-react';
 import './UserModal.css';
 
-const ROLES = ['Admin', 'Operator', 'Viewer', 'Manager'];
+const ROLES = ['Admin', 'Manager', 'Operator', 'Viewer'];
 
 const UserModal = ({ isOpen, onClose, onSave }) => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [role, setRole] = useState('Operator');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = () => {
-        if (!name.trim() || !email.trim()) return;
-        onSave({ name, email, role });
-        setName('');
-        setEmail('');
-        setRole('Operator');
+    const handleSubmit = async () => {
+        if (!name.trim() || !email.trim() || !password.trim()) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            await onSave({ 
+                name, 
+                email, 
+                password, 
+                role 
+            });
+            // Reset form after successful submission
+            setName('');
+            setEmail('');
+            setPassword('');
+            setRole('Operator');
+        } catch (error) {
+            console.error('Error in handleSubmit:', error);
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -63,6 +83,20 @@ const UserModal = ({ isOpen, onClose, onSave }) => {
                             </div>
 
                             <div className="form-group">
+                                <label>Password</label>
+                                <div className="input-with-icon">
+                                    <Lock size={18} />
+                                    <input
+                                        type="password"
+                                        placeholder="Enter password"
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                    />
+                                </div>
+                                <small className="hint-text">Min. 8 characters</small>
+                            </div>
+
+                            <div className="form-group">
                                 <label>System Role</label>
                                 <div className="role-selector">
                                     {ROLES.map(r => (
@@ -84,8 +118,9 @@ const UserModal = ({ isOpen, onClose, onSave }) => {
                             <button
                                 className="modal-btn btn-neon"
                                 onClick={handleSubmit}
+                                disabled={isLoading}
                             >
-                                INVITE MEMBER
+                                {isLoading ? 'CREATING...' : 'CREATE USER'}
                             </button>
                         </footer>
                     </motion.div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Filter, Layers, Plus, CheckCircle2, AlertTriangle, Flame, ShieldAlert, Cpu, Loader2, AlertCircle } from 'lucide-react';
 import DeviceCard from '../components/Dashboard/DeviceCard';
-import { mockDevices } from '../data/mockDevices';
+import api from '../api/client';
 import './Devices.css';
 
 const HealthMetric = ({ label, value, percent, color, icon: Icon }) => (
@@ -30,24 +30,41 @@ const Devices = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const fetchDevices = async () => {
+        try {
+            setLoading(true);
+            const data = await api.getEquipment();
+            setDevices(data.data || []);
+            setError(null);
+        } catch (err) {
+            console.error('Error fetching devices:', err);
+            setError('Failed to connect to device service');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        setDevices(mockDevices);
-        setLoading(false);
+        fetchDevices();
+        
+        // Refresh every 30 seconds
+        const interval = setInterval(fetchDevices, 30000);
+        return () => clearInterval(interval);
     }, []);
 
     const stats = {
         total: devices.length,
-        healthy: devices.filter(d => d.status === 'Running').length,
-        warning: devices.filter(d => d.status === 'Warning').length,
-        critical: devices.filter(d => d.status === 'Critical').length,
-        offline: devices.filter(d => d.status === 'Offline').length
+        healthy: devices.filter(d => d.status === 'running' || d.status === 'Running').length,
+        warning: devices.filter(d => d.status === 'Warning' || d.status === 'warning').length,
+        critical: devices.filter(d => d.status === 'critical' || d.status === 'Critical').length,
+        offline: devices.filter(d => d.status === 'stopped' || d.status === 'Stopped' || d.status === 'offline').length
     };
 
     const healthStats = [
-        { label: 'ALL DEVICES', value: stats.total, icon: Cpu, color: 'blue' },
+        { label: 'TOTAL', value: stats.total, icon: Cpu, color: 'blue' },
         { label: 'HEALTHY', value: stats.healthy, percent: stats.total ? Math.round((stats.healthy / stats.total) * 100) : 0, color: 'success', icon: CheckCircle2 },
         { label: 'WARNING', value: stats.warning, percent: stats.total ? Math.round((stats.warning / stats.total) * 100) : 0, color: 'warning', icon: AlertTriangle },
-        { label: 'CRITICAL', value: stats.critical, percent: stats.total ? Math.round((stats.critical / stats.total) * 100) : 0, color: 'error', icon: Flame },
+        { label: 'CRIT', value: stats.critical, percent: stats.total ? Math.round((stats.critical / stats.total) * 100) : 0, color: 'error', icon: Flame },
         { label: 'OFFLINE', value: stats.offline, percent: stats.total ? Math.round((stats.offline / stats.total) * 100) : 0, color: 'neutral', icon: ShieldAlert },
     ];
 
@@ -103,9 +120,15 @@ const Devices = () => {
 
             {/* Grid */}
             <div className="enterprise-devices-grid">
-                {devices.map((d, i) => (
-                    <DeviceCard key={d.id} {...d} delay={i * 0.1} />
-                ))}
+                {devices.length > 0 ? (
+                    devices.map((d, i) => (
+                        <DeviceCard key={d.id} {...d} delay={i * 0.1} />
+                    ))
+                ) : (
+                    <div className="no-devices-message" style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '3rem' }}>
+                        <p>No devices found. Onboard a device to see it here.</p>
+                    </div>
+                )}
             </div>
         </div >
     );

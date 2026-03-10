@@ -17,6 +17,8 @@
 
 .chart-wrapper {
     margin-top: 1rem;
+    height: 240px;
+    /* recharts ResponsiveContainer now uses 100% of this */
 }
 
 .recharts-cartesian-axis-line {
@@ -25,4 +27,35 @@
 
 .recharts-tooltip-cursor {
     stroke: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Mobile: improve readability ── */
+@media (max-width: 768px) {
+    .chart-container {
+        padding: 0;
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        backdrop-filter: none;
+    }
+
+    .chart-header {
+        display: none;
+        /* title already shown in the parent section */
+    }
+
+    .chart-wrapper {
+        margin-top: 0;
+        height: 110px;
+        /* compact chart height on mobile */
+    }
+
+    /* Shrink recharts axis ticks so they fit on small screens */
+    .recharts-xAxis .recharts-cartesian-axis-tick text {
+        font-size: 9px !important;
+    }
+
+    .recharts-yAxis .recharts-cartesian-axis-tick text {
+        font-size: 9px !important;
+    }
 }

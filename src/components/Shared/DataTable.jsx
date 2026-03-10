@@ -29,9 +29,9 @@ const DataTable = ({ columns, data, title, actions }) => {
                     </thead>
                     <tbody>
                         {data.map((row, rowIdx) => (
-                            <tr key={rowIdx}>
+                            <tr key={rowIdx} className={row.type || ''}>
                                 {columns.map((col, colIdx) => (
-                                    <td key={colIdx}>
+                                    <td key={colIdx} data-label={col.header}>
                                         {col.render ? col.render(row[col.accessor], row) : row[col.accessor]}
                                     </td>
                                 ))}

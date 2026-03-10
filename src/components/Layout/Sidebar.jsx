@@ -12,7 +12,7 @@ import {
   LifeBuoy,
   LogOut,
   Factory,
-  Sparkles
+  MessageSquare
 } from 'lucide-react';
 import './Sidebar.css';
 
@@ -25,7 +25,7 @@ const Sidebar = () => {
     { icon: <ShieldCheck size={22} />, label: 'Rules', path: '/rules' },
     { icon: <FileBox size={22} />, label: 'Reporting', path: '/reporting' },
     { icon: <BarChart3 size={22} />, label: 'Analytics', path: '/analytics' },
-    { icon: <Sparkles size={22} />, label: 'Assistant', path: 'http://3.80.75.136:8501', external: true },
+    { icon: <MessageSquare size={22} />, label: 'Assistance', path: '/assistance' },
   ];
 
   return (
@@ -58,37 +58,14 @@ const Sidebar = () => {
 
       <nav className="dock-nav">
         {menuItems.map((item) => (
-          item.external ? (
-            <a
-              key={item.label}
-              href={item.path}
-              className="dock-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <div className="link-icon">{item.icon}</div>
-              <AnimatePresence>
-                {isExpanded && (
-                  <motion.span
-                    initial={{ opacity: 0, x: -5 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -5 }}
-                    className="link-label"
-                  >
-                    {item.label}
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </a>
-          ) : (
-            <NavLink
-              key={item.label}
-              to={item.path}
-              className={({ isActive }) => `dock-link ${isActive ? 'active' : ''}`}
-            >
-              <div className="link-icon">{item.icon}</div>
-              <AnimatePresence>
-                {isExpanded && (
+          <NavLink
+            key={item.label}
+            to={item.path}
+            className={({ isActive }) => `dock-link ${isActive ? 'active' : ''}`}
+          >
+            <div className="link-icon">{item.icon}</div>
+            <AnimatePresence>
+              {isExpanded && (
                   <motion.span
                     initial={{ opacity: 0, x: -5 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -100,7 +77,6 @@ const Sidebar = () => {
                 )}
               </AnimatePresence>
             </NavLink>
-          )
         ))}
       </nav>
 

@@ -86,6 +86,12 @@
     background: rgba(255, 255, 255, 0.1);
 }
 
+.hint-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    margin-left: 0.5rem;
+}
+
 .role-selector {
     display: grid;
     grid-template-columns: repeat(2, 1fr);

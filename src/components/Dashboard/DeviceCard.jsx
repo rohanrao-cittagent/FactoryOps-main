@@ -4,8 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import { Cpu, Activity, Gauge, Thermometer, ChevronRight, Binary } from 'lucide-react';
 import './DeviceCard.css';
 
-const DeviceCard = ({ id, id_label, name, health = 0, efficiency = '--', power = '--', vibration, temp, status, delay = 0 }) => {
+const DeviceCard = ({ 
+    id, 
+    fullId,
+    id_label, 
+    name, 
+    health = 0, 
+    efficiency = '--', 
+    power = '--', 
+    temp,
+    voltage,
+    vibration, 
+    status, 
+    delay = 0 
+}) => {
     const navigate = useNavigate();
+    const deviceId = id || fullId;
 
     return (
         <motion.div
@@ -17,12 +31,12 @@ const DeviceCard = ({ id, id_label, name, health = 0, efficiency = '--', power =
         >
             <div className="ecard-header-clean">
                 <div className="ecard-id-stack">
-                    <span className="ecard-id-main">{id}</span>
+                    <span className="ecard-id-main">{deviceId}</span>
                     <span className="ecard-id-sep">|</span>
                     <span className="ecard-name-sub">{name}</span>
                 </div>
-                <div className={`status-tag-minimal ${status.toLowerCase()}`}>
-                    <span>{status.toUpperCase()}</span>
+                <div className={`status-tag-minimal ${(status || 'unknown').toLowerCase()}`}>
+                    <span>{(status || 'unknown').toUpperCase()}</span>
                 </div>
             </div>
 
@@ -40,19 +54,27 @@ const DeviceCard = ({ id, id_label, name, health = 0, efficiency = '--', power =
                 <div className="ecard-stats-grid-minimal">
                     <div className="stat-box">
                         <span className="s-label">EFFICIENCY</span>
-                        <span className="s-val">{efficiency}%</span>
+                        <span className="s-val">{efficiency === '--' ? '--' : `${efficiency}`}%</span>
                     </div>
                     <div className="stat-box">
                         <span className="s-label">POWER</span>
-                        <span className="s-val">{power}kW</span>
+                        <span className="s-val">{power === '--' ? '--' : `${power}`}kW</span>
                     </div>
                 </div>
-                {temp && (
+                {(temp || voltage) && (
                     <div className="ecard-stats-grid-minimal" style={{ marginTop: '0.75rem' }}>
-                        <div className="stat-box">
-                            <span className="s-label">TEMP</span>
-                            <span className="s-val">{temp}°C</span>
-                        </div>
+                        {temp && (
+                            <div className="stat-box">
+                                <span className="s-label">TEMP</span>
+                                <span className="s-val">{temp}°C</span>
+                            </div>
+                        )}
+                        {voltage && (
+                            <div className="stat-box">
+                                <span className="s-label">VOLTAGE</span>
+                                <span className="s-val">{voltage}V</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -60,7 +82,7 @@ const DeviceCard = ({ id, id_label, name, health = 0, efficiency = '--', power =
             <div className="ecard-action-footer">
                 <button
                     className="btn-action-minimal"
-                    onClick={() => navigate(`/devices/${id}`)}
+                    onClick={() => navigate(`/devices/${deviceId}`)}
                 >
                     View Details
                     <ChevronRight size={16} />

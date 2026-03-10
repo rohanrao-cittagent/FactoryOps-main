@@ -4,60 +4,8 @@ import { Search, Plus, Play, Pause, Settings, Shield, Zap, Flame, Droplet, Activ
 import DataTable from '../components/Shared/DataTable';
 import RuleModal from '../components/Rules/RuleModal';
 import { useToast } from '../components/Shared/Toast';
-import { NotificationService } from '../services/NotificationService';
 import { api } from '../api/client';
 import './Rules.css';
-
-const DEFAULT_RULES = [
-    {
-        id: 1,
-        name: 'High Pressure Alert',
-        devices: 'D1, D3',
-        condition: 'Pressure > 130 psi',
-        status: 'Active',
-        type: 'danger',
-        icon: 'Flame',
-        metric: 'Pressure',
-        operator: '>',
-        value: '130'
-    },
-    {
-        id: 2,
-        name: 'Low Efficiency Warning',
-        devices: 'All Compressors',
-        condition: 'Efficiency < 70%',
-        status: 'Active',
-        type: 'warning',
-        icon: 'Zap',
-        metric: 'Efficiency',
-        operator: '<',
-        value: '70'
-    },
-    {
-        id: 3,
-        name: 'Vibration Critical Alert',
-        devices: 'D2, D4',
-        condition: 'Vibration > 4.0 mm/s',
-        status: 'Paused',
-        type: 'neutral',
-        icon: 'Activity',
-        metric: 'Vibration',
-        operator: '>',
-        value: '4.0'
-    },
-    {
-        id: 4,
-        name: 'Temperature Spike',
-        devices: 'All Boilers',
-        condition: 'Temp > 95°C',
-        status: 'Active',
-        type: 'info',
-        icon: 'Droplet',
-        metric: 'Temperature',
-        operator: '>',
-        value: '95'
-    },
-];
 
 const ICON_MAP = {
     Flame: <Flame size={16} />,
@@ -67,73 +15,177 @@ const ICON_MAP = {
     Shield: <Shield size={16} />
 };
 
+const getSeverityIcon = (severity) => {
+    switch (severity?.toLowerCase()) {
+        case 'critical':
+        case 'danger':
+            return 'Flame';
+        case 'warning':
+            return 'Zap';
+        case 'info':
+            return 'Droplet';
+        default:
+            return 'Activity';
+    }
+};
+
+const getSeverityType = (severity) => {
+    switch (severity?.toLowerCase()) {
+        case 'critical':
+        case 'danger':
+            return 'danger';
+        case 'warning':
+            return 'warning';
+        case 'info':
+            return 'info';
+        default:
+            return 'neutral';
+    }
+};
+
 const Rules = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [rules, setRules] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [editingRule, setEditingRule] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const { showToast, ToastContainer } = useToast();
 
-    useEffect(() => {
-        const fetchRules = async () => {
-            try {
-                const response = await api.getRules();
-                setRules(response.data);
-            } catch (error) {
-                console.error('Failed to fetch rules:', error);
-                // Fallback to local storage or defaults if API fails
-                const savedRules = localStorage.getItem('factoryops_rules');
-                if (savedRules) {
-                    setRules(JSON.parse(savedRules));
-                }
-            }
-        };
-        fetchRules();
-    }, []);
+     useEffect(() => {
+         const fetchRules = async () => {
+             try {
+                 setLoading(true);
+                 const response = await api.getRules();
+                 
+                 // Transform API data to UI format
+                 // client.js already maps: rule_id->id, rule_name->name, property, threshold, device_ids, status
+                 const transformedRules = (response.data || []).map(rule => ({
+                     id: rule.id,
+                     name: rule.name,
+                     devices: rule.device_ids?.[0] || 'All',
+                     condition: `${rule.property || 'Metric'} ${rule.condition || '>'} ${rule.threshold || ''}`,
+                     status: rule.status,
+                     type: 'neutral',
+                     icon: 'Activity',
+                     metric: rule.property || '',
+                     operator: rule.condition || '>',
+                     value: rule.threshold || '',
+                     device_ids: rule.device_ids || [],
+                     property: rule.property,
+                     threshold: rule.threshold,
+                     description: rule.description,
+                     selectedChannels: rule.notification_channels || ['email']
+                 }));
+                 
+                 setRules(transformedRules);
+             } catch (error) {
+                 console.error('Failed to fetch rules:', error);
+                 showToast('Failed to load rules', 'error');
+             } finally {
+                 setLoading(false);
+             }
+         };
+         fetchRules();
+         
+         // Add visibility change listener to refetch when user comes back to this tab
+         const handleVisibilityChange = () => {
+             if (!document.hidden) {
+                 console.log('[Rules] User returned to Rules page, refetching...');
+                 fetchRules();
+             }
+         };
+         
+         document.addEventListener('visibilitychange', handleVisibilityChange);
+         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+     }, []);
 
-    const saveRules = (newRules) => {
-        setRules(newRules);
-        localStorage.setItem('factoryops_rules', JSON.stringify(newRules));
+     const handleToggleStatus = async (id) => {
+         const rule = rules.find(r => r.id === id);
+         if (!rule) return;
+
+         try {
+             const newStatus = rule.status === 'active' ? 'Inactive' : 'Active';
+             console.log(`Toggling rule ${id} status from ${rule.status} to ${newStatus}`);
+             
+             // Use the dedicated status update endpoint
+             await api.updateRuleStatus(id, newStatus);
+             
+             // Update UI after successful API call - convert back to lowercase
+             const statusToStore = newStatus === 'Active' ? 'active' : 'paused';
+             setRules(rules.map(r => 
+                 r.id === id ? { ...r, status: statusToStore } : r
+             ));
+             showToast(`Rule ${newStatus === 'Active' ? 'activated' : 'deactivated'}`, 'success');
+          } catch (error) {
+              console.error('Failed to toggle rule:', error);
+              showToast('Failed to update rule status', 'error');
+              // Refetch rules to sync state with server
+              try {
+                  const rulesData = await api.getRules();
+                  const fetchedRules = rulesData.data || [];
+                  const transformedRules = (fetchedRules).map(rule => ({
+                      id: rule.id,
+                      name: rule.name,
+                      devices: rule.device_ids?.[0] || 'All',
+                      condition: `${rule.property || 'Metric'} ${rule.condition || '>'} ${rule.threshold || ''}`,
+                      status: rule.status,
+                      type: 'neutral',
+                      icon: 'Activity',
+                      metric: rule.property || '',
+                      operator: rule.condition || '>',
+                      value: rule.threshold || '',
+                      device_ids: rule.device_ids || [],
+                      property: rule.property,
+                      threshold: rule.threshold,
+                      description: rule.description,
+                      selectedChannels: rule.notification_channels || ['email']
+                  }));
+                  setRules(transformedRules);
+              } catch (refetchError) {
+                  console.error('Failed to refetch rules:', refetchError);
+              }
+          }
     };
 
-    const handleToggleStatus = (id) => {
-        const updatedRules = rules.map(rule =>
-            rule.id === id
-                ? { ...rule, status: rule.status === 'Active' ? 'Paused' : 'Active' }
-                : rule
-        );
-        saveRules(updatedRules);
-    };
-
-    const handleDeleteRule = (id) => {
+    const handleDeleteRule = async (id) => {
         if (window.confirm('Are you sure you want to delete this rule?')) {
-            const updatedRules = rules.filter(r => r.id !== id);
-            saveRules(updatedRules);
+            try {
+                await api.deleteRule(id);
+                setRules(rules.filter(r => r.id !== id));
+                showToast('Rule deleted', 'success');
+            } catch (error) {
+                console.error('Failed to delete rule:', error);
+                showToast('Failed to delete rule', 'error');
+            }
         }
     };
 
     const handleAddOrUpdateRule = async (ruleData) => {
         try {
+            // Pass ruleData directly to api.createRule and api.updateRule
+            // These functions handle the proper field mapping to API schema
+
             if (editingRule) {
                 await api.updateRule(editingRule.id, ruleData);
-                setRules(rules.map(r => r.id === editingRule.id ? { ...ruleData, id: r.id } : r));
+                setRules(rules.map(r => r.id === editingRule.id ? { ...r, ...ruleData, id: r.id } : r));
                 showToast('Rule updated successfully', 'success');
             } else {
-                const response = await api.createRule(ruleData);
-                const newRule = response.data;
-                setRules([...rules, newRule]);
-
-                // Trigger email notification
-                NotificationService.sendEmail(
-                    'operator@factoryops.com',
-                    `New Rule Created: ${ruleData.name}`,
-                    `A new automation rule "${ruleData.name}" has been established for ${ruleData.devices}. Logic: ${ruleData.condition}`
-                ).then(() => {
-                    showToast(`Rule activated! Confirmation email sent.`, 'success');
-                }).catch(err => {
-                    console.error("Email failed:", err);
-                    showToast('Rule created, but email failed.', 'warning');
-                });
+                // createRule now handles proper API field mapping
+                await api.createRule(ruleData);
+                // Refresh rules list
+                const response = await api.getRules();
+                const transformedRules = (response.data || []).map(rule => ({
+                    id: rule.rule_id,  // API returns rule_id
+                    name: rule.rule_name,  // API returns rule_name
+                    devices: rule.device_ids?.[0] || 'All',  // device_ids is now an array
+                    condition: `${rule.property} ${rule.condition} ${rule.threshold}`,  // API field names
+                    status: rule.status === 'active' ? 'Active' : 'Inactive',  // API returns lowercase
+                    type: getSeverityType(rule.severity),
+                    icon: getSeverityIcon(rule.severity),
+                    description: rule.description
+                }));
+                setRules(transformedRules);
+                showToast('Rule created successfully', 'success');
             }
         } catch (error) {
             console.error('Failed to save rule:', error);
@@ -154,8 +206,8 @@ const Rules = () => {
     };
 
     const filteredRules = rules.filter(rule =>
-        rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        rule.devices.toLowerCase().includes(searchQuery.toLowerCase())
+        rule.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        rule.devices?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     const columns = [
@@ -163,7 +215,7 @@ const Rules = () => {
             header: 'Rule Name',
             accessor: 'name',
             render: (name, row) => (
-                <div className={`rule-name-cell ${row.type}`}>
+                <div className={`rule-name-cell ${row.type || 'neutral'}`}>
                     <div className="rule-icon-box">
                         {ICON_MAP[row.icon] || <Shield size={16} />}
                     </div>
@@ -171,18 +223,22 @@ const Rules = () => {
                 </div>
             )
         },
-        { header: 'Affected Assets', accessor: 'devices' },
+        {
+            header: 'Affected Assets',
+            accessor: 'devices',
+            render: (devices) => <span className="asset-badge-premium">{devices}</span>
+        },
         {
             header: 'Logic Protocol',
             accessor: 'condition',
-            render: (cond, row) => <code className={`rule-code-premium ${row.type}`}>{cond}</code>
+            render: (cond, row) => <code className={`rule-code-premium ${row.type || 'neutral'}`}>{cond}</code>
         },
         {
             header: 'Status',
             accessor: 'status',
             render: (status) => (
-                <span className={`status-pill-minimal ${status.toLowerCase()}`}>
-                    {status.toLowerCase() === 'active' ? (
+                <span className={`status-pill-minimal ${status?.toLowerCase() || 'inactive'}`}>
+                    {status?.toLowerCase() === 'active' ? (
                         <Check size={12} className="status-icon-svg" />
                     ) : (
                         <span className="dot" />
@@ -196,13 +252,13 @@ const Rules = () => {
             accessor: 'id',
             render: (id, row) => (
                 <div className="table-actions-premium">
-                    <button
-                        className={`control-icon-btn small ${row.status === 'Active' ? 'active' : ''}`}
-                        title={row.status === 'Active' ? 'Pause Protocol' : 'Activate Protocol'}
-                        onClick={() => handleToggleStatus(row.id)}
-                    >
-                        {row.status === 'Active' ? <Pause size={16} /> : <Play size={16} />}
-                    </button>
+                     <button
+                         className={`control-icon-btn small ${row.status === 'active' ? 'active' : ''}`}
+                         title={row.status === 'active' ? 'Pause Protocol' : 'Activate Protocol'}
+                         onClick={() => handleToggleStatus(row.id)}
+                     >
+                         {row.status === 'active' ? <Pause size={16} /> : <Play size={16} />}
+                     </button>
                     <button
                         className="control-icon-btn small"
                         title="Configure Logic"
@@ -222,10 +278,18 @@ const Rules = () => {
         },
     ];
 
+    if (loading) {
+        return (
+            <div className="rules-container">
+                <div className="rules-loading">
+                    <p>Loading rules...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="rules-container">
-
-
             <div className="rules-toolbar-premium">
                 <div className="rules-actions-row">
                     <div className="search-box-premium">
@@ -249,7 +313,6 @@ const Rules = () => {
                 </div>
             </div>
 
-            {/* Crystalline Data Hub */}
             <div className="rules-content-hub">
                 <DataTable
                     title="Active Automation Protocols"
@@ -269,7 +332,7 @@ const Rules = () => {
             />
 
             <ToastContainer />
-        </div >
+        </div>
     );
 };
 

@@ -93,9 +93,9 @@
 }
 
 .status-pill.inactive {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-secondary);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
+    color: #9ca3af;
+    border-color: rgba(0, 0, 0, 0.4);
 }
 
 .status-pill.pending {
@@ -128,7 +128,204 @@
 }
 
 .table-badge.inactive {
-    background: rgba(239, 68, 68, 0.1);
-    color: #f87171;
-    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(0, 0, 0, 0.3);
+    color: #9ca3af;
+    border-color: rgba(0, 0, 0, 0.4);
+}
+
+/* Responsive Table -> Card Layout */
+/* Responsive Table -> Card Layout (Premium Mobile Redesign) */
+@media (max-width: 768px) {
+    .data-table-container {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        padding: 0 0.5rem;
+    }
+
+    .table-header {
+        padding: 1rem 0;
+        background: transparent;
+        border: none;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-info h3 {
+        font-size: 1.25rem;
+        letter-spacing: -0.01em;
+    }
+
+    .table-wrapper {
+        overflow: visible;
+    }
+
+    .custom-table {
+        display: block;
+    }
+
+    .custom-table thead {
+        display: none;
+    }
+
+    .custom-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .custom-table tr {
+        display: block;
+        width: 100%;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 1.25rem;
+        position: relative;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    /* Type-specific Top Glow & Accent */
+    .custom-table tr::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 24px 24px 0 0;
+        z-index: 1;
+    }
+
+    .custom-table tr.danger {
+        border-top-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .custom-table tr.danger::before {
+        background: linear-gradient(90deg, #ef4444, #f87171);
+        opacity: 0.8;
+    }
+
+    .custom-table tr.warning::before {
+        background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        opacity: 0.8;
+    }
+
+    .custom-table tr.info::before {
+        background: linear-gradient(90deg, #0ea5e9, #38bdf8);
+        opacity: 0.8;
+    }
+
+    .custom-table tr.neutral::before {
+        background: linear-gradient(90deg, #94a3b8, #cbd5e1);
+        opacity: 0.8;
+    }
+
+    .custom-table tr:active {
+        transform: scale(0.98);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .custom-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.875rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        text-align: right;
+        gap: 1.5rem;
+    }
+
+    .custom-table td:first-child {
+        padding-top: 0;
+        border-bottom: none;
+        margin-bottom: 0.5rem;
+    }
+
+    .custom-table td:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+        margin-top: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 1.25rem;
+    }
+
+    .custom-table td::after {
+        content: attr(data-label);
+        font-size: 0.65rem;
+        font-weight: 800;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        text-align: left;
+        opacity: 0.6;
+        min-width: 80px;
+    }
+
+    /* Hide the label for the main title/name and actions to keep it clean */
+    .custom-table td[data-label="Rule Name"]::after,
+    .custom-table td[data-label="Actions"]::after {
+        display: none;
+    }
+
+    /* Styling for specific cells in card format */
+    .custom-table td[data-label="Rule Name"] {
+        display: block;
+        text-align: left;
+    }
+
+    .rule-name-cell {
+        justify-content: flex-start;
+        font-size: 1.25rem;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+    }
+
+    .table-actions-premium {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 1.25rem;
+    }
+
+    .control-icon-btn.small {
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-primary);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .control-icon-btn.small.active {
+        background: var(--accent-primary);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .status-pill-minimal {
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 900;
+    }
+}
+
+:root.light .custom-table tr {
+    background: white;
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+}
+
+:root.light .custom-table td::after {
+    color: #64748b;
+    opacity: 0.8;
 }

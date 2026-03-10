@@ -355,3 +355,50 @@
         transform: translateY(0);
     }
 }
+
+/* ============================================
+   MOBILE — analytics page
+   ============================================ */
+@media (max-width: 768px) {
+    .analytics-page-root {
+        padding: 0.5rem 0;
+        gap: 1rem;
+    }
+
+    .analytics-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .config-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .results-cards {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .chart-wrapper-main {
+        min-height: 280px;
+        padding: 1rem;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .data-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .analytics-table th,
+    .analytics-table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+}

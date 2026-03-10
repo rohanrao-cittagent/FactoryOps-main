@@ -471,3 +471,81 @@
 :root.light .notification-footer {
     border-top-color: rgba(0, 0, 0, 0.08);
 }
+
+/* ============================================
+   MOBILE HEADER — compact single-row pill
+   ============================================ */
+@media (max-width: 768px) {
+    .floating-header {
+        margin-bottom: 1rem;
+    }
+
+    .header-pill {
+        padding: 0.5rem 0.875rem;
+        border-radius: 16px;
+        gap: 0.5rem;
+    }
+
+    /* Hide search bar entirely on mobile */
+    .header-center-search {
+        display: none;
+    }
+
+    /* Hide brand breadcrumb on mobile — we show page title only */
+    .header-breadcrumbs .brand-text,
+    .header-breadcrumbs .separator {
+        display: none;
+    }
+
+    .header-breadcrumbs {
+        min-width: 0;
+        overflow: hidden;
+        flex: 1;
+    }
+
+    .header-breadcrumbs .current {
+        font-size: 0.85rem;
+        font-weight: 900;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+
+    /* Tighter controls */
+    .header-controls {
+        gap: 0.5rem;
+    }
+
+    .control-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+    }
+
+    /* Hide profile text (name/role) — show only avatar */
+    .profile-text {
+        display: none;
+    }
+
+    .header-profile-section {
+        padding-left: 0.5rem;
+        border-left: none;
+    }
+
+    .profile-trigger {
+        gap: 0;
+        padding: 0.25rem;
+    }
+
+    /* Dropdowns full-width friendly on mobile */
+    .profile-dropdown-menu {
+        right: 0;
+        width: 220px;
+    }
+
+    .notification-dropdown-menu {
+        right: -60px;
+        width: 280px;
+    }
+}

@@ -139,3 +139,52 @@
 .metric-subtext.default::before {
     background: #94a3b8;
 }
+
+/* ============================================
+   MOBILE — metric cards (clean tile redesign)
+   ============================================ */
+@media (max-width: 768px) {
+    .enterprise-metric-card {
+        padding: 1rem;
+        border-radius: 20px;
+        gap: 0.4rem;
+        min-height: 120px;
+        justify-content: space-between;
+    }
+
+    /* Label: sentence-case, smaller, no aggressive caps */
+    .metric-header h3 {
+        font-size: 0.7rem;
+        letter-spacing: 0.04em;
+        line-height: 1.3;
+        opacity: 0.8;
+        text-transform: uppercase;
+    }
+
+    /* Big number — prominent */
+    .metric-value-row h2 {
+        font-size: 2rem;
+        letter-spacing: -0.03em;
+        line-height: 1;
+    }
+
+    /* Trend pill — sit below the number */
+    .metric-value-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .metric-trend-pill {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        white-space: nowrap;
+        align-self: flex-start;
+    }
+
+    .metric-subtext {
+        font-size: 0.7rem;
+        margin-top: 0.2rem;
+    }
+}

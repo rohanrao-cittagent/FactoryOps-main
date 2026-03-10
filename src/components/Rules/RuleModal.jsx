@@ -2,6 +2,7 @@ import { useNotification } from '../../context/NotificationContext';
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown } from 'lucide-react';
+import { api } from '../../api/client';
 import './RuleModal.css';
 
 // ... (constants remain the same)
@@ -41,27 +42,55 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
     const { addNotification } = useNotification();
     const [name, setName] = useState('');
     const [target, setTarget] = useState('Specific Devices');
-    const [selectedDevice, setSelectedDevice] = useState('D1-Compressor');
+    const [selectedDevice, setSelectedDevice] = useState('');
     const [selectedType, setSelectedType] = useState('Compressors');
     const [conditions, setConditions] = useState([
         { metric: 'Temperature', operator: '>', value: '95', logic: 'AND' }
     ]);
     const [selectedChannels, setSelectedChannels] = useState(['Email', 'In-app']);
+    const [availableDevices, setAvailableDevices] = useState([]);
+
+    useEffect(() => {
+        // Fetch available devices when modal opens
+        const fetchDevices = async () => {
+            try {
+                const response = await api.getEquipment();
+                const devices = response.data || [];
+                console.log('Fetched devices:', devices);
+                const deviceIds = devices.map(d => d.fullId || d.id);
+                console.log('Device IDs:', deviceIds);
+                setAvailableDevices(deviceIds);
+                if (deviceIds.length > 0 && !selectedDevice) {
+                    setSelectedDevice(deviceIds[0]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch devices:', error);
+                // Fallback to default devices
+                const fallbackDevices = ['COMPRESSOR-001', 'COMPRESSOR-002', 'PUMP-001', 'GENERATOR-001', 'MOTOR-001', 'D6', 'DEVICE-001', 'VAL-001'];
+                setAvailableDevices(fallbackDevices);
+                setSelectedDevice(fallbackDevices[0]);
+            }
+        };
+        
+        if (isOpen) {
+            fetchDevices();
+        }
+    }, [isOpen, selectedDevice]);
 
     useEffect(() => {
         if (editingRule) {
             setName(editingRule.name || '');
-            setTarget(editingRule.devices === 'All Machines' ? 'All Machines' : 'Specific Devices');
-            setSelectedDevice(editingRule.devices !== 'All Machines' ? editingRule.devices : 'D1-Compressor');
+            setTarget(editingRule.target || (editingRule.devices === 'All Machines' ? 'All Machines' : 'Specific Devices'));
+            setSelectedDevice(editingRule.selectedDevice || editingRule.device_id || editingRule.devices || (availableDevices[0] || ''));
 
             if (editingRule.conditions && editingRule.conditions.length > 0) {
                 setConditions(editingRule.conditions);
             } else {
                 // Fallback for legacy rules
                 setConditions([{
-                    metric: editingRule.metric || 'Temperature',
-                    operator: editingRule.operator || '>',
-                    value: editingRule.value || '95',
+                    metric: editingRule.metric || editingRule.parameter_name || 'Temperature',
+                    operator: editingRule.operator || editingRule.condition || '>',
+                    value: editingRule.value || editingRule.threshold_value || '95',
                     logic: 'AND'
                 }]);
             }
@@ -70,10 +99,11 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
         } else {
             setName('');
             setTarget('Specific Devices');
+            setSelectedDevice(availableDevices[0] || '');
             setConditions([{ metric: 'Temperature', operator: '>', value: '95', logic: 'AND' }]);
             setSelectedChannels(['Email', 'In-app']);
         }
-    }, [editingRule, isOpen]);
+    }, [editingRule, isOpen, availableDevices]);
 
     const handleChannelToggle = (channel) => {
         setSelectedChannels(prev =>
@@ -98,8 +128,21 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
         setConditions(newConditions);
     };
 
-    const handleSubmit = () => {
-        if (!name.trim()) return;
+    const handleSubmit = async () => {
+        if (!name.trim()) {
+            alert('Please enter a rule name');
+            return;
+        }
+
+        // Generate device_id based on target selection
+        let device_id = null;
+        if (target === 'Specific Devices') {
+            device_id = selectedDevice;
+        } else if (target === 'Device Type') {
+            device_id = null; // Will be handled differently
+        } else {
+            device_id = null; // All Machines
+        }
 
         // Generate a readable condition string
         const conditionString = conditions.map((c, i) =>
@@ -107,40 +150,49 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
         ).join(' ');
 
         const firstMetric = conditions[0].metric;
+        const firstOperator = conditions[0].operator;
+        const firstValue = conditions[0].value;
 
         const ruleData = {
             name,
             devices: target === 'Specific Devices'
                 ? selectedDevice
-                : (target === 'Device Type' ? `All ${selectedType}` : target),
+                : (target === 'Device Type' ? selectedType : 'All Machines'),
+            device_id: device_id, // Explicitly include device_id for API
+            selectedDevice: selectedDevice,
+            selectedType: selectedType,
             target, // Keep raw target for easier filtering logic
-            selectedType: target === 'Device Type' ? selectedType : null,
             condition: conditionString,
+            metric: firstMetric,
+            operator: firstOperator,
+            value: firstValue,
+            parameter_name: firstMetric,
+            threshold_value: parseFloat(firstValue),
             status: editingRule ? editingRule.status : 'Active',
             type: firstMetric === 'Temperature' || firstMetric === 'Pressure' ? 'danger' : 'warning',
             icon: firstMetric === 'Temperature' ? 'Flame' : firstMetric === 'Pressure' ? 'Droplet' : 'Zap',
             conditions, // Store raw conditions for editing
-            // Legacy fields for backward compatibility if needed
-            metric: firstMetric,
-            operator: conditions[0].operator,
-            value: conditions[0].value
+            severity: firstMetric === 'Temperature' || firstMetric === 'Pressure' ? 'critical' : 'warning',
+            selectedChannels: selectedChannels // Pass selected channels for API
         };
 
-        if (!editingRule) {
+        try {
+            // Always call onSave instead of directly calling api.createRule
+            // This allows the parent component to handle the save logic
+            onSave(ruleData);
             addNotification(
-                'Rule Created',
-                `Automation rule "${name}" has been successfully created.`,
+                editingRule ? 'Rule Updated' : 'Rule Created',
+                `Automation rule "${name}" has been successfully ${editingRule ? 'updated' : 'created'}.`,
                 'success'
             );
-        } else {
+        } catch (error) {
+            console.error('Error saving rule:', error);
             addNotification(
-                'Rule Updated',
-                `Automation rule "${name}" has been updated.`,
-                'info'
+                'Error',
+                `Failed to save rule: ${error.message}`,
+                'error'
             );
         }
-
-        onSave(ruleData);
     };
     return (
         <AnimatePresence mode="wait">
@@ -206,7 +258,11 @@ const RuleModal = ({ isOpen, onClose, onSave, editingRule }) => {
                                                 value={selectedDevice}
                                                 onChange={(e) => setSelectedDevice(e.target.value)}
                                             >
-                                                {DEVICES.map(d => <option key={d} value={d}>{d}</option>)}
+                                                {availableDevices.length > 0 ? (
+                                                    availableDevices.map(d => <option key={d} value={d}>{d}</option>)
+                                                ) : (
+                                                    <option value="">No devices available</option>
+                                                )}
                                             </select>
                                         </div>
                                     </motion.div>

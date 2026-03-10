@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from './components/Layout/Sidebar';
+import MobileNav from './components/Layout/MobileNav';
 import Header from './components/Layout/Header';
 import { ThemeProvider } from './context/ThemeContext';
 import { NotificationProvider } from './context/NotificationContext';
@@ -15,6 +16,7 @@ import Reporting from './pages/Reporting';
 import Analytics from './pages/Analytics';
 import DeviceDetails from './pages/DeviceDetails';
 import Chatbot from './pages/Chatbot';
+import Assistance from './pages/Assistance';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 
@@ -69,6 +71,7 @@ const AnimatedRoutes = () => {
         <Route path="/rules" element={<ProtectedRoute><PageWrapper title="Automation Rules"><Rules /></PageWrapper></ProtectedRoute>} />
         <Route path="/reporting" element={<ProtectedRoute><PageWrapper title="Operations Reports"><Reporting /></PageWrapper></ProtectedRoute>} />
         <Route path="/analytics" element={<ProtectedRoute><PageWrapper title="Deep Analytics"><Analytics /></PageWrapper></ProtectedRoute>} />
+        <Route path="/assistance" element={<ProtectedRoute><Assistance /></ProtectedRoute>} />
         <Route path="/devices/:id" element={<ProtectedRoute><PageWrapper title="Device Details"><DeviceDetails /></PageWrapper></ProtectedRoute>} />
         <Route path="/chatbot" element={<ProtectedRoute><PageWrapper title="AI Assistant"><Chatbot /></PageWrapper></ProtectedRoute>} />
 
@@ -89,6 +92,7 @@ const AppContent = () => {
   return (
     <div className="app-hub">
       <Sidebar />
+      <MobileNav />
       <main className="main-canvas">
         <AnimatedRoutes />
       </main>

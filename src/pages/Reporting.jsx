@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Download,
@@ -14,9 +14,12 @@ import {
     CheckCircle2,
     AlertCircle
 } from 'lucide-react';
+import api from '../api/client';
 import './Reporting.css';
 
 const Reporting = () => {
+    const [devicesList, setDevicesList] = useState([]);
+    const [loadingDevices, setLoadingDevices] = useState(true);
     const [devices, setDevices] = useState('All Machines');
     const [range, setRange] = useState('Last 30 Days');
     const [analysis, setAnalysis] = useState(['Anomaly Detection', 'Failure Prediction']);
@@ -27,31 +30,92 @@ const Reporting = () => {
     const [isComplete, setIsComplete] = useState(false);
     const [selectedType, setSelectedType] = useState('Compressors');
 
+    // Fetch devices on mount
+    useEffect(() => {
+        const fetchDevices = async () => {
+            try {
+                const response = await api.getEquipment();
+                setDevicesList(response.data || []);
+            } catch (error) {
+                console.error('Failed to fetch devices:', error);
+            } finally {
+                setLoadingDevices(false);
+            }
+        };
+        
+        fetchDevices();
+    }, []);
+
     const toggleAnalysis = (item) => {
         setAnalysis(prev =>
             prev.includes(item) ? prev.filter(i => i !== item) : [...prev, item]
         );
     };
 
-    const generateMockData = () => {
+    const generateMockData = async () => {
         const timestamp = new Date().toLocaleString();
         const reportId = Math.floor(10000 + Math.random() * 90000);
 
-        // Mock Event Log Data
-        const logs = [
-            { timestamp: "2/16/2026, 4:12:48 AM", severity: "Warning", device: "BULB-129", message: "High Voltage Fluctuation" },
-            { timestamp: "2/15/2026, 7:39:31 PM", severity: "Warning", device: "BULB-126", message: "Unexpected Dimming" },
-            { timestamp: "2/15/2026, 2:12:17 PM", severity: "Warning", device: "BULB-115", message: "High Voltage Fluctuation" },
-            { timestamp: "2/15/2026, 12:24:05 PM", severity: "Warning", device: "BULB-133", message: "High Voltage Fluctuation" },
-            { timestamp: "2/14/2026, 6:08:23 AM", severity: "Critical Alert", device: "BULB-116", message: "Filament Overheat Detected" },
-            { timestamp: "2/13/2026, 5:08:37 PM", severity: "Warning", device: "BULB-102", message: "Unexpected Dimming" },
-            { timestamp: "2/12/2026, 10:06:48 PM", severity: "Warning", device: "BULB-105", message: "Unexpected Dimming" },
-            { timestamp: "2/12/2026, 9:35:06 PM", severity: "Warning", device: "BULB-142", message: "Unexpected Dimming" },
-            { timestamp: "2/12/2026, 11:55:03 AM", severity: "Warning", device: "BULB-110", message: "Unexpected Dimming" },
-            { timestamp: "2/11/2026, 8:42:10 AM", severity: "Warning", device: "BULB-127", message: "High Voltage Fluctuation" },
-            { timestamp: "2/11/2026, 2:57:17 AM", severity: "Warning", device: "BULB-121", message: "High Voltage Fluctuation" },
-            { timestamp: "2/11/2026, 1:07:57 AM", severity: "Critical Alert", device: "BULB-105", message: "Filament Overheat Detected" }
-        ];
+        // Fetch real alerts from the backend
+        let logs = [];
+        try {
+            const alertsResponse = await api.getAlerts({ limit: 12 });
+            logs = (alertsResponse.data || []).map(alert => ({
+                timestamp: new Date(alert.created_at || new Date()).toLocaleString(),
+                severity: alert.severity || 'Warning',
+                device: alert.device_id || 'Unknown',
+                message: alert.message || alert.description || 'Alert triggered'
+            }));
+        } catch (error) {
+            console.warn('Failed to fetch real alerts, using mock data:', error);
+            // Fallback to mock data
+            logs = [
+                { timestamp: "2/16/2026, 4:12:48 AM", severity: "Warning", device: "BULB-129", message: "High Voltage Fluctuation" },
+                { timestamp: "2/15/2026, 7:39:31 PM", severity: "Warning", device: "BULB-126", message: "Unexpected Dimming" },
+                { timestamp: "2/15/2026, 2:12:17 PM", severity: "Warning", device: "BULB-115", message: "High Voltage Fluctuation" },
+                { timestamp: "2/15/2026, 12:24:05 PM", severity: "Warning", device: "BULB-133", message: "High Voltage Fluctuation" },
+                { timestamp: "2/14/2026, 6:08:23 AM", severity: "Critical Alert", device: "BULB-116", message: "Filament Overheat Detected" },
+                { timestamp: "2/13/2026, 5:08:37 PM", severity: "Warning", device: "BULB-102", message: "Unexpected Dimming" },
+                { timestamp: "2/12/2026, 10:06:48 PM", severity: "Warning", device: "BULB-105", message: "Unexpected Dimming" },
+                { timestamp: "2/12/2026, 9:35:06 PM", severity: "Warning", device: "BULB-142", message: "Unexpected Dimming" },
+                { timestamp: "2/12/2026, 11:55:03 AM", severity: "Warning", device: "BULB-110", message: "Unexpected Dimming" },
+                { timestamp: "2/11/2026, 8:42:10 AM", severity: "Warning", device: "BULB-127", message: "High Voltage Fluctuation" },
+                { timestamp: "2/11/2026, 2:57:17 AM", severity: "Warning", device: "BULB-121", message: "High Voltage Fluctuation" },
+                { timestamp: "2/11/2026, 1:07:57 AM", severity: "Critical Alert", device: "BULB-105", message: "Filament Overheat Detected" }
+            ];
+        }
+
+        // Fetch real device summary for metrics
+        let summary = {
+            operationalUptime: "99.92%",
+            systemEfficiency: "94.2/100",
+            activeUnits: "842 Bulbs",
+            avgLifespan: "15,000 hrs",
+            estEnergySavings: "1,240 kWh",
+            estCostSavings: "$3,450"
+        };
+
+        try {
+            const dashboardResponse = await api.getDashboardSummary();
+            if (dashboardResponse.summary) {
+                const summary_data = dashboardResponse.summary;
+                const total = summary_data.total_devices || 0;
+                const running = summary_data.running_devices || 0;
+                const uptime = total > 0 ? ((running / total) * 100).toFixed(2) : 0;
+                const health = summary_data.system_health || 94.2;
+                
+                summary = {
+                    operationalUptime: `${uptime}%`,
+                    systemEfficiency: `${health}/100`,
+                    activeUnits: `${running} / ${total} Devices`,
+                    avgLifespan: "15,000 hrs",
+                    estEnergySavings: "1,240 kWh",
+                    estCostSavings: "$3,450"
+                };
+            }
+        } catch (error) {
+            console.warn('Failed to fetch real dashboard summary:', error);
+        }
 
         const data = {
             reportId,
@@ -63,14 +127,7 @@ const Reporting = () => {
                 analysisEnabled: analysis,
                 format
             },
-            summary: {
-                operationalUptime: "99.92%",
-                systemEfficiency: "94.2/100",
-                activeUnits: "842 Bulbs",
-                avgLifespan: "15,000 hrs",
-                estEnergySavings: "1,240 kWh",
-                estCostSavings: "$3,450"
-            },
+            summary,
             logs
         };
         return data;
@@ -151,15 +208,18 @@ ${data.logs.map(log =>
         URL.revokeObjectURL(url);
     };
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
         setIsGenerating(true);
-        setTimeout(() => {
-            const reportData = generateMockData();
+        try {
+            const reportData = await generateMockData();
             triggerDownload(reportData);
             setIsGenerating(false);
             setIsComplete(true);
             setTimeout(() => setIsComplete(false), 3000);
-        }, 2000);
+        } catch (error) {
+            console.error('Report generation failed:', error);
+            setIsGenerating(false);
+        }
     };
 
     const containerVariants = {

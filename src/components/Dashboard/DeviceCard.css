@@ -267,3 +267,179 @@
 .btn-action-minimal:hover svg {
     transform: translateX(3px);
 }
+
+/* ============================================
+   MOBILE — device card → compact list row
+   ============================================ */
+@media (max-width: 768px) {
+    .enterprise-device-card {
+        border-radius: 16px;
+        flex-direction: column;
+        padding: 0;
+        overflow: hidden;
+        position: relative;
+        border-left: 4px solid var(--accent-secondary);
+    }
+
+    /* Status-specific left border color */
+    .enterprise-device-card:has(.status-tag-minimal.running) {
+        border-left-color: var(--accent-success);
+    }
+
+    .enterprise-device-card:has(.status-tag-minimal.warning) {
+        border-left-color: var(--accent-warning);
+    }
+
+    .enterprise-device-card:has(.status-tag-minimal.critical) {
+        border-left-color: var(--accent-error);
+    }
+
+    /* Remove the pseudo-element accent strip (using border-left instead) */
+    .enterprise-device-card::before {
+        display: none;
+    }
+
+    /* ── Top row: header info + arrow button ── */
+    .ecard-header-clean {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 0.5rem 0.5rem 0.875rem;
+        background: transparent;
+        border-bottom: none;
+        flex: 1;
+        min-width: 0;
+    }
+
+    /* Left side of header: ID + name stacked */
+    .ecard-id-stack {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.15rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .ecard-id-main {
+        font-size: 0.875rem;
+        font-weight: 900;
+        white-space: nowrap;
+    }
+
+    .ecard-name-sub {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
+    }
+
+    .status-tag-minimal {
+        flex-shrink: 0;
+        font-size: 0.58rem;
+        padding: 0.2rem 0.5rem;
+        white-space: nowrap;
+        border-radius: 6px;
+        letter-spacing: 0.05em;
+    }
+
+    /* ── Body: show only health bar, hide extra stats grid ── */
+    .ecard-body-minimal {
+        display: flex;
+        padding: 0 0.875rem 0.75rem;
+        gap: 0;
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .ecard-health-section {
+        gap: 0.3rem;
+    }
+
+    .health-label-row .label {
+        font-size: 0.58rem;
+    }
+
+    .health-label-row .val {
+        font-size: 0.75rem;
+    }
+
+    /* Hide the extra stats grid (efficiency, power, temp) */
+    .ecard-stats-grid-minimal {
+        display: none;
+    }
+
+    /* ── Footer: full-width tap target at bottom of card ── */
+    .ecard-action-footer {
+        padding: 0.5rem 0.875rem 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        background: transparent;
+        width: 100%;
+        justify-content: flex-start;
+        margin-top: 0;
+    }
+
+    :root.light .ecard-action-footer {
+        border-top: 1px solid rgba(0, 0, 0, 0.04);
+    }
+
+    .btn-action-minimal {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.3rem 0.5rem;
+        background: transparent;
+        border: none;
+        color: var(--accent-primary);
+        gap: 0.3rem;
+        box-shadow: none;
+        letter-spacing: 0.01em;
+    }
+
+    .btn-action-minimal:hover {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        transform: none;
+        color: var(--accent-secondary);
+    }
+
+    .btn-action-minimal svg {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+/* Skeleton loading animation */
+@keyframes skeleton-shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.skeleton-line {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 0%,
+        rgba(255, 255, 255, 0.2) 50%,
+        rgba(255, 255, 255, 0.1) 100%
+    );
+    background-size: 1000px 100%;
+    animation: skeleton-shimmer 2s infinite;
+    border-radius: 4px;
+}
+
+:root.light .skeleton-line {
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.05) 0%,
+        rgba(0, 0, 0, 0.1) 50%,
+        rgba(0, 0, 0, 0.05) 100%
+    );
+    background-size: 1000px 100%;
+}

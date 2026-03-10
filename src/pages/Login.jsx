@@ -4,7 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn, Github, Chrome, Factory } from 'lucide-react';
 import './Auth.css';
 
-import { api } from '../api/client';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import { useToast } from '../components/Shared/Toast';
 
 const Login = () => {
@@ -19,20 +20,104 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            const response = await api.login({ email, password });
-            const user = response.data;
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
 
-            localStorage.setItem('factoryops_user', JSON.stringify(user));
-            showToast(`Welcome back, ${user.name}`, 'success');
+            // Store user info in localStorage
+            const userData = {
+                id: user.uid,
+                email: user.email,
+                name: user.displayName || user.email.split('@')[0],
+                role: 'User',
+                avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email)}&background=random`,
+                idToken: await user.getIdToken()
+            };
+            
+            localStorage.setItem('factoryops_user', JSON.stringify(userData));
+            showToast(`Welcome back, ${userData.name}!`, 'success');
 
-            // Delary navigation slightly to show toast
+            // Delay navigation slightly to show toast
             setTimeout(() => {
                 navigate('/dashboard');
             }, 1000);
 
         } catch (error) {
             console.error('Login failed:', error);
-            showToast(error.response?.data?.detail || 'Invalid credentials', 'error');
+            let errorMessage = 'Invalid credentials';
+            
+            if (error.code === 'auth/user-not-found') {
+                errorMessage = 'No account found with this email';
+            } else if (error.code === 'auth/wrong-password') {
+                errorMessage = 'Incorrect password';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Invalid email address';
+            } else if (error.code === 'auth/user-disabled') {
+                errorMessage = 'This account has been disabled';
+            } else if (error.code === 'auth/too-many-requests') {
+                errorMessage = 'Too many login attempts. Please try again later';
+            }
+            
+            showToast(errorMessage, 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        setIsLoading(true);
+        try {
+            const provider = new GoogleAuthProvider();
+            const userCredential = await signInWithPopup(auth, provider);
+            const user = userCredential.user;
+
+            const userData = {
+                id: user.uid,
+                email: user.email,
+                name: user.displayName || user.email.split('@')[0],
+                role: 'User',
+                avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`,
+                idToken: await user.getIdToken()
+            };
+            
+            localStorage.setItem('factoryops_user', JSON.stringify(userData));
+            showToast(`Welcome, ${userData.name}!`, 'success');
+
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1000);
+        } catch (error) {
+            console.error('Google login failed:', error);
+            showToast('Google login failed. Please try again', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGithubLogin = async () => {
+        setIsLoading(true);
+        try {
+            const provider = new GithubAuthProvider();
+            const userCredential = await signInWithPopup(auth, provider);
+            const user = userCredential.user;
+
+            const userData = {
+                id: user.uid,
+                email: user.email,
+                name: user.displayName || user.email.split('@')[0],
+                role: 'User',
+                avatar: user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName)}&background=random`,
+                idToken: await user.getIdToken()
+            };
+            
+            localStorage.setItem('factoryops_user', JSON.stringify(userData));
+            showToast(`Welcome, ${userData.name}!`, 'success');
+
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1000);
+        } catch (error) {
+            console.error('GitHub login failed:', error);
+            showToast('GitHub login failed. Please try again', 'error');
         } finally {
             setIsLoading(false);
         }
@@ -124,13 +209,23 @@ const Login = () => {
                     <div className="auth-divider">Or continue with</div>
 
                     <div className="social-auth-grid">
-                        <button className="social-btn">
+                        <button 
+                            type="button"
+                            className="social-btn"
+                            onClick={handleGoogleLogin}
+                            disabled={isLoading}
+                        >
                             <Chrome size={18} />
                             Google
                         </button>
-                        <button className="social-btn">
+                        <button 
+                            type="button"
+                            className="social-btn"
+                            onClick={handleGithubLogin}
+                            disabled={isLoading}
+                        >
                             <Github size={18} />
-                            Azure AD
+                            GitHub
                         </button>
                     </div>
 

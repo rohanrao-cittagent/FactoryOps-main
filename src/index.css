@@ -215,8 +215,17 @@ h4 {
   flex: 1;
   padding: 2rem;
   padding-left: 160px;
-  /* Offset for sidebar */
+  /* Offset for desktop sidebar */
   min-height: 100vh;
+}
+
+/* Mobile: sidebar is hidden, remove its padding offset */
+@media (max-width: 768px) {
+  .main-canvas {
+    padding: 1rem !important;
+    padding-bottom: 100px !important;
+    /* space for fixed bottom nav */
+  }
 }
 
 /* Custom Scrollbar */

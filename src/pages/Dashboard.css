@@ -113,7 +113,42 @@
 
 @media (max-width: 768px) {
     .metrics-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .dashboard-main-row {
         grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .dashboard-devices-grid {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .insight-card-enterprise {
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .insights-column-enterprise {
+        max-width: 100%;
+    }
+
+    /* Stack section header title + button vertically */
+    .section-header-enterprise {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .section-header-enterprise h2 {
+        font-size: 1rem;
+    }
+
+    .view-all-link {
+        font-size: 0.85rem;
     }
 }
 

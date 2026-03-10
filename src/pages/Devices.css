@@ -299,12 +299,195 @@
 }
 
 @media (max-width: 768px) {
+
+    /* ═══════════════════════════════════
+       TOOLBAR
+       ═══════════════════════════════════ */
+
+    .devices-container {
+        gap: 1rem;
+    }
+
+    .devices-toolbar-premium {
+        gap: 0.75rem;
+    }
+
     .devices-actions-row {
         flex-direction: column;
         align-items: stretch;
+        gap: 0.75rem;
+        padding: 0.875rem;
+        border-radius: 18px;
     }
 
+    /* Full-width search bar */
+    .search-box-premium {
+        flex: 1 1 100%;
+        padding: 0.65rem 1rem;
+        border-radius: 12px;
+    }
+
+    .search-box-premium input {
+        font-size: 0.9rem;
+    }
+
+    /* Buttons row — icon buttons + Add Device button */
+    .toolbar-hub-btns {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: flex-start;
+    }
+
+    .toolbar-hub-btns .btn-neon {
+        flex: 1;
+        justify-content: center;
+        padding: 0.65rem 1rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+    }
+
+    .toolbar-hub-btns .control-icon-btn {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        flex-shrink: 0;
+    }
+
+    /* ── HEALTH STATUS — 5 color-coded tiles in a single row ── */
+
+    .health-overview-panel {
+        padding: 0.875rem;
+        border-radius: 18px;
+    }
+
+    .panel-sublabel {
+        display: none;
+    }
+
+    /* Single flex row, equal tiles */
     .health-stats-grid {
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-direction: row;
+        gap: 0.4rem;
+        grid-template-columns: unset;
+        overflow: visible;
+    }
+
+    /* Base tile */
+    .health-stat-card {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.15rem;
+        padding: 0.75rem 0.2rem;
+        min-width: 0;
+        border-radius: 14px;
+        text-align: center;
+        cursor: default;
+        transition: none;
+    }
+
+    .health-stat-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Color-coded backgrounds per status */
+    .health-stat-card.blue {
+        background: rgba(99, 102, 241, 0.18);
+        border: 1px solid rgba(99, 102, 241, 0.35);
+    }
+
+    .health-stat-card.success {
+        background: rgba(16, 185, 129, 0.18);
+        border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .health-stat-card.warning {
+        background: rgba(245, 158, 11, 0.18);
+        border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .health-stat-card.error {
+        background: rgba(239, 68, 68, 0.18);
+        border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .health-stat-card.neutral {
+        background: rgba(100, 116, 139, 0.15);
+        border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+
+    :root.light .health-stat-card.blue {
+        background: rgba(99, 102, 241, 0.1);
+        border-color: rgba(99, 102, 241, 0.25);
+    }
+
+    :root.light .health-stat-card.success {
+        background: rgba(16, 185, 129, 0.1);
+        border-color: rgba(16, 185, 129, 0.25);
+    }
+
+    :root.light .health-stat-card.warning {
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.25);
+    }
+
+    :root.light .health-stat-card.error {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.25);
+    }
+
+    :root.light .health-stat-card.neutral {
+        background: rgba(100, 116, 139, 0.08);
+        border-color: rgba(100, 116, 139, 0.2);
+    }
+
+    /* Hide icon — number + label is enough in tight tile */
+    .stat-icon-orb {
+        display: none;
+    }
+
+    /* Large bold number */
+    .h-stat-value {
+        font-size: 1.5rem;
+        font-weight: 900;
+        letter-spacing: -0.05em;
+        line-height: 1;
+        display: block;
+    }
+
+    /* Tiny uppercase label */
+    .h-stat-label {
+        font-size: 0.5rem;
+        letter-spacing: 0.06em;
+        font-weight: 800;
+        text-transform: uppercase;
+        opacity: 0.75;
+        display: block;
+        white-space: nowrap;
+        line-height: 1.2;
+    }
+
+    /* Hide progress bars completely */
+    .h-stat-footer,
+    .h-stat-percent-row,
+    .h-stat-progress {
+        display: none !important;
+    }
+
+    /* ── Device list — compact single column ── */
+    .enterprise-devices-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+        margin-bottom: 2rem;
+    }
+
+    .devices-title-hub h1 {
+        font-size: 1.75rem;
     }
 }

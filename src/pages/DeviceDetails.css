@@ -272,8 +272,15 @@
 .chart-controls-row {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-end;
     margin-bottom: 2rem;
+    gap: 1.5rem;
+}
+
+.chart-title-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
 .chart-title-stack h3 {
@@ -285,6 +292,61 @@
 .chart-title-stack .subtext {
     font-size: 0.85rem;
     color: var(--text-secondary);
+}
+
+.time-range-group {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    gap: 0.25rem;
+    background: rgba(30, 41, 59, 0.8) !important;
+    /* Slightly lighter navy */
+    padding: 0.25rem;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    margin: 0 auto !important;
+    /* Center it */
+    z-index: 10;
+}
+
+.range-btn {
+    padding: 0.4rem 1rem;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #94a3b8 !important;
+    /* Bright gray */
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.range-btn:hover {
+    color: white !important;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.range-btn.active {
+    background: #6366f1 !important;
+    /* Primary Indigo */
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+:root.light .time-range-group {
+    background: #f1f5f9 !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+:root.light .range-btn {
+    color: #64748b !important;
+}
+
+:root.light .range-btn.active {
+    background: white !important;
+    color: #6366f1 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .metric-toggle-group {
@@ -339,8 +401,8 @@
 /* Interaction Hub */
 .interaction-hub-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.5rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
 }
 
 .hub-btn {
@@ -405,19 +467,546 @@
     }
 }
 
+/* ======================================================
+   MOBILE UTILITY CLASSES
+   ====================================================== */
+
+/* Show only on desktop (≥769px) */
+.desktop-only {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    .desktop-only {
+        display: unset;
+    }
+
+    .mobile-only {
+        display: none !important;
+    }
+}
+
+/* ======================================================
+   MOBILE HERO CARD STYLES (used only on mobile)
+   ====================================================== */
+
+.mobile-device-hero {
+    display: none;
+    /* hidden on desktop */
+}
+
+/* ======================================================
+   MOBILE LAYOUT  @media (max-width: 768px)
+   ====================================================== */
 @media (max-width: 768px) {
+
+    /* ─── UTILITIES ─── */
+    .desktop-only {
+        display: none !important;
+    }
+
+    .mobile-only {
+        display: block;
+    }
+
+    /* ─── CONTAINER ─── */
+    .device-details-container {
+        padding: 0.875rem;
+        gap: 1rem;
+    }
+
+    .details-main-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 0.875rem;
+    }
+
+    /* ─── BACK NAV ─── */
+    .details-header-nav {
+        margin-bottom: 0;
+    }
+
+    .back-btn-minimal {
+        font-size: 0.8rem;
+        padding: 0.5rem 0.875rem;
+        border-radius: 10px;
+        gap: 0.35rem;
+    }
+
+    /* ==================================================
+       MOBILE HERO CARD
+       ================================================== */
+    .mobile-device-hero {
+        display: block;
+        padding: 1.25rem;
+        border-radius: 22px;
+        background: linear-gradient(135deg,
+                rgba(99, 102, 241, 0.15) 0%,
+                rgba(139, 92, 246, 0.08) 50%,
+                rgba(255, 255, 255, 0.03) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .mobile-device-hero::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+        border-radius: 22px 22px 0 0;
+    }
+
+    /* Top row: name on left, health score on right */
+    .mobile-hero-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+    }
+
+    .mobile-hero-name-block {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .mobile-device-id-tag {
+        font-size: 0.6rem;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent-primary);
+        opacity: 0.8;
+    }
+
+    .mobile-device-name {
+        font-size: 1.3rem;
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        color: var(--text-primary);
+        margin: 0;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Health score block: label above, number below */
+    .mobile-hero-health-block {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.15rem;
+        flex-shrink: 0;
+        padding-left: 1rem;
+    }
+
+    .mobile-health-label {
+        font-size: 0.52rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.6;
+        color: var(--text-secondary);
+    }
+
+    .mobile-health-value {
+        font-size: 2.2rem;
+        font-weight: 900;
+        letter-spacing: -0.05em;
+        line-height: 1;
+    }
+
+    .mobile-health-value.healthy {
+        color: #34d399;
+    }
+
+    .mobile-health-value.warning {
+        color: #fbbf24;
+    }
+
+    .mobile-health-value.critical {
+        color: #f87171;
+    }
+
+    /* Status badge + info chips row */
+    .mobile-hero-status-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+    }
+
+    .mobile-status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.65rem;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .mobile-status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        box-shadow: 0 0 8px currentColor;
+    }
+
+    .mobile-status-badge.running {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .mobile-status-badge.warning {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .mobile-status-badge.critical {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .mobile-status-badge.offline {
+        background: rgba(100, 116, 139, 0.15);
+        color: #94a3b8;
+        border: 1px solid rgba(100, 116, 139, 0.3);
+    }
+
+    .mobile-info-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.6rem;
+        border-radius: 8px;
+        font-size: 0.6rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        color: var(--text-secondary);
+        white-space: nowrap;
+    }
+
+    :root.light .mobile-info-chip {
+        background: rgba(0, 0, 0, 0.04);
+        border-color: rgba(0, 0, 0, 0.07);
+    }
+
+    /* ==================================================
+       METRICS GRID — iOS-style 2×2 tiles
+       ================================================== */
     .metrics-summary-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.6rem;
+    }
+
+    .metric-status-card {
+        padding: 1rem;
+        border-radius: 18px;
+        gap: 0.6rem;
+        cursor: pointer;
+    }
+
+    /* Icon + label row at top */
+    .m-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+
+    .m-title-group {
+        gap: 0.35rem;
+        align-items: center;
+    }
+
+    .m-icon {
+        opacity: 0.7;
+    }
+
+    .m-label {
+        font-size: 0.55rem;
+        letter-spacing: 0.05em;
+        line-height: 1.3;
+        opacity: 0.75;
+    }
+
+    /* Large prominent value */
+    .m-value {
+        font-size: 1.5rem;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+        line-height: 1;
+        align-self: flex-start;
+        margin-top: 0.15rem;
+    }
+
+    .m-unit {
+        font-size: 0.6rem;
+        opacity: 0.7;
+    }
+
+    /* Compact progress bar */
+    .m-status-bar-container {
+        gap: 0.2rem;
+    }
+
+    .m-status-bar-bg {
+        height: 5px;
+    }
+
+    /* Hide range labels — too noisy on small tiles */
+    .m-range-labels {
+        display: none;
+    }
+
+    /* ==================================================
+       PERFORMANCE CHART
+       ================================================== */
+    .performance-analytics-section {
+        padding: 1rem;
+        border-radius: 18px;
     }
 
     .chart-controls-row {
         flex-direction: column;
         align-items: flex-start;
-        gap: 1.5rem;
+        gap: 0.75rem;
     }
 
-    .health-score-value {
-        font-size: 2rem;
+    .chart-title-stack h3 {
+        font-size: 1rem;
+        margin: 0;
+    }
+
+    .chart-title-stack .subtext {
+        font-size: 0.68rem;
+    }
+
+    /* Swipeable metric selector row */
+    .metric-toggle-group {
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 0.3rem;
+        padding-bottom: 2px;
+    }
+
+    .metric-toggle-group::-webkit-scrollbar {
+        display: none;
+    }
+
+    .toggle-tab {
+        flex-shrink: 0;
+        padding: 0.4rem 0.875rem;
+        font-size: 0.72rem;
+        border-radius: 8px;
+        white-space: nowrap;
+    }
+
+    /* Chart — let recharts use its natural height (240px from ResponsiveContainer) */
+    .main-chart-area {
+        height: auto;
+        overflow: visible;
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    /* ==================================================
+       INTERACTION HUB — 2×2 icon buttons
+       ================================================== */
+    .interaction-hub-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.625rem;
+    }
+
+    .hub-btn {
+        padding: 1.125rem 0.75rem;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        border-radius: 18px;
+        gap: 0.6rem;
+        letter-spacing: 0.01em;
+    }
+
+    .hub-icon-box {
+        width: 42px;
+        height: 42px;
+        border-radius: 13px;
+    }
+
+    /* ==================================================
+       HUB CONTENT PANEL (Rules Redesign)
+       ================================================== */
+    .hub-content-panel {
+        padding: 1.25rem 1rem;
+        border-radius: 20px;
+        margin-top: 0.5rem;
+    }
+
+    .panel-header {
+        margin-bottom: 1.25rem;
+    }
+
+    .p-header-top {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.25rem;
+    }
+
+    .p-title-stack h4 {
+        font-size: 1.1rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .p-title-stack p {
+        font-size: 0.75rem;
+        opacity: 0.7;
+    }
+
+    .add-rule-btn-h {
+        width: 100%;
+        justify-content: center;
+        padding: 0.875rem;
+        border-radius: 14px;
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        order: 2;
+        /* Put button below title on mobile */
+    }
+
+    .applied-rules-list {
+        gap: 0.875rem;
+    }
+
+    .applied-rule-card {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 1.25rem;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-left: 4px solid var(--accent-primary);
+        position: relative;
+        gap: 1rem;
+    }
+
+    .rule-info {
+        width: 100%;
+        gap: 0.75rem;
+    }
+
+    .rule-badge {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        gap: 0.5rem;
+    }
+
+    .rule-badge svg {
+        color: var(--accent-primary);
+        width: 16px;
+        height: 16px;
+    }
+
+    .rule-logic-preview {
+        font-size: 0.7rem;
+        padding: 0.75rem;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        display: block;
+        width: 100%;
+        font-family: 'JetBrains Mono', monospace;
+        color: #94a3b8;
+        line-height: 1.4;
+    }
+
+    .rule-actions-hub {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 0.75rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .rule-status-tag {
+        font-size: 0.65rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        background: rgba(52, 211, 153, 0.1);
+        color: #34d399;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+    }
+
+    /* Status Variants - Mobile */
+    .rule-status-tag.active {
+        background: rgba(52, 211, 153, 0.1);
+        color: #34d399;
+    }
+
+    .rule-status-tag.paused,
+    .rule-status-tag.inactive,
+    .rule-status-tag.archived {
+        background: rgba(0, 0, 0, 0.3);
+        color: #9ca3af;
+    }
+
+    .rule-status-tag.running {
+        background: rgba(34, 211, 238, 0.1);
+        color: #22d3ee;
+    }
+
+    .rule-status-tag.stopped {
+        background: rgba(107, 114, 128, 0.1);
+        color: #9ca3af;
+    }
+
+    .edit-rule-btn-mini {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.05);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .empty-state-hub {
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.02);
+        border-radius: 20px;
+        border: 1px dashed rgba(255, 255, 255, 0.1);
+    }
+
+    .empty-state-hub p {
+        font-size: 0.85rem;
+        margin-top: 0.75rem;
+        opacity: 0.6;
     }
 }
 
@@ -547,6 +1136,59 @@
     background: rgba(16, 185, 129, 0.1);
     color: #10b981;
     border-radius: 100px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.rule-status-tag:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+/* Status Variants */
+.rule-status-tag.active {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.rule-status-tag.active:hover {
+    background: rgba(16, 185, 129, 0.2);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.rule-status-tag.paused,
+.rule-status-tag.inactive,
+.rule-status-tag.archived {
+    background: rgba(0, 0, 0, 0.3);
+    color: #9ca3af;
+}
+
+.rule-status-tag.paused:hover,
+.rule-status-tag.inactive:hover,
+.rule-status-tag.archived:hover {
+    background: rgba(0, 0, 0, 0.4);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.rule-status-tag.running {
+    background: rgba(34, 211, 238, 0.1);
+    color: #22d3ee;
+}
+
+.rule-status-tag.running:hover {
+    background: rgba(34, 211, 238, 0.2);
+    box-shadow: 0 2px 8px rgba(34, 211, 238, 0.3);
+}
+
+.rule-status-tag.stopped {
+    background: rgba(107, 114, 128, 0.1);
+    color: #9ca3af;
+}
+
+.rule-status-tag.stopped:hover {
+    background: rgba(107, 114, 128, 0.2);
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.2);
 }
 
 .pulse-dot {
@@ -706,4 +1348,140 @@
 /* Overlay backdrop for light mode — keep dark enough to see the modal */
 :root.light .mo-overlay {
     background: rgba(15, 23, 42, 0.5);
+}
+
+/* Device Configuration Features */
+.device-configurations-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+@media (min-width: 1200px) {
+    .device-configurations-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+.config-box {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 0.75rem;
+}
+
+.config-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.weight-summary {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.text-success {
+    color: #10b981;
+}
+
+.text-danger {
+    color: #ef4444;
+}
+
+.config-body {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.config-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.config-table th {
+    text-align: left;
+    padding: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.config-table td {
+    padding: 0.75rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.config-table .empty-row {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.add-config-btn {
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    color: #818cf8;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.add-config-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+    transform: translateY(-2px);
+}
+
+.delete-btn-tiny {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #f87171;
+    padding: 0.25rem;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.delete-btn-tiny:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+:root.light .config-table th {
+    color: #64748b;
+}
+
+:root.light .config-table td {
+    color: #1e293b;
+}
+
+:root.light .add-config-btn {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #6366f1;
 }

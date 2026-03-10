@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, User, Building, UserPlus, Github, Chrome, Factory } from 'lucide-react';
-import { api } from '../api/client';
+import { createUserWithEmailAndPassword, updateProfile, signInWithPopup, GoogleAuthProvider, GithubAuthProvider } from 'firebase/auth';
+import { auth } from '../config/firebase';
 import { useToast } from '../components/Shared/Toast';
 
 const Signup = () => {
@@ -29,11 +30,15 @@ const Signup = () => {
         setIsLoading(true);
 
         try {
-            const response = await api.register(formData);
-            const user = response.data;
+            // Create Firebase user
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+            const user = userCredential.user;
 
-            // Do not auto-login. Force user to sign in manually.
-            // localStorage.setItem('factoryops_user', JSON.stringify(user));
+            // Update profile with display name
+            await updateProfile(user, {
+                displayName: formData.name,
+                photoURL: `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name)}&background=random`
+            });
 
             showToast('Account created successfully! Redirecting to login...', 'success');
 
@@ -43,10 +48,73 @@ const Signup = () => {
 
         } catch (error) {
             console.error("Signup error:", error);
-            showToast(error.response?.data?.detail || error.message, 'error');
+            let errorMessage = 'Failed to create account';
+            
+            if (error.code === 'auth/email-already-in-use') {
+                errorMessage = 'An account with this email already exists';
+            } else if (error.code === 'auth/weak-password') {
+                errorMessage = 'Password should be at least 6 characters';
+            } else if (error.code === 'auth/invalid-email') {
+                errorMessage = 'Invalid email address';
+            }
+            
+            showToast(errorMessage, 'error');
         } finally {
             setIsLoading(false);
+        }
+    };
 
+    const handleGoogleSignup = async () => {
+        setIsLoading(true);
+        try {
+            const provider = new GoogleAuthProvider();
+            const userCredential = await signInWithPopup(auth, provider);
+            const user = userCredential.user;
+
+            // Update profile with organization and role if not already set
+            if (!user.displayName) {
+                await updateProfile(user, {
+                    displayName: formData.name || user.email.split('@')[0]
+                });
+            }
+
+            showToast('Account created successfully!', 'success');
+
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1000);
+        } catch (error) {
+            console.error('Google signup failed:', error);
+            showToast('Google signup failed. Please try again', 'error');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGithubSignup = async () => {
+        setIsLoading(true);
+        try {
+            const provider = new GithubAuthProvider();
+            const userCredential = await signInWithPopup(auth, provider);
+            const user = userCredential.user;
+
+            // Update profile with organization and role if not already set
+            if (!user.displayName) {
+                await updateProfile(user, {
+                    displayName: formData.name || user.email.split('@')[0]
+                });
+            }
+
+            showToast('Account created successfully!', 'success');
+
+            setTimeout(() => {
+                navigate('/dashboard');
+            }, 1000);
+        } catch (error) {
+            console.error('GitHub signup failed:', error);
+            showToast('GitHub signup failed. Please try again', 'error');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -195,13 +263,23 @@ const Signup = () => {
                     <div className="auth-divider">Or join with</div>
 
                     <div className="social-auth-grid">
-                        <button className="social-btn">
+                        <button 
+                            type="button"
+                            className="social-btn"
+                            onClick={handleGoogleSignup}
+                            disabled={isLoading}
+                        >
                             <Chrome size={18} />
                             Google
                         </button>
-                        <button className="social-btn">
+                        <button 
+                            type="button"
+                            className="social-btn"
+                            onClick={handleGithubSignup}
+                            disabled={isLoading}
+                        >
                             <Github size={18} />
-                            Azure AD
+                            GitHub
                         </button>
                     </div>
 

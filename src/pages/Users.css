@@ -95,6 +95,80 @@
     font-weight: 500;
 }
 
+/* Role Badge Styles */
+.role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.role-admin {
+    background: rgba(255, 0, 127, 0.15);
+    color: #ff007f;
+    border: 1px solid rgba(255, 0, 127, 0.3);
+}
+
+.role-manager {
+    background: rgba(100, 150, 255, 0.15);
+    color: #6496ff;
+    border: 1px solid rgba(100, 150, 255, 0.3);
+}
+
+.role-operator {
+    background: rgba(100, 255, 150, 0.15);
+    color: #64ff96;
+    border: 1px solid rgba(100, 255, 150, 0.3);
+}
+
+.role-viewer {
+    background: rgba(200, 150, 255, 0.15);
+    color: #c896ff;
+    border: 1px solid rgba(200, 150, 255, 0.3);
+}
+
+/* Status Badge Styles */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-active {
+    background: rgba(100, 255, 150, 0.15);
+    color: #64ff96;
+    border: 1px solid rgba(100, 255, 150, 0.3);
+}
+
+.status-suspended {
+    background: rgba(255, 100, 100, 0.15);
+    color: #ff6464;
+    border: 1px solid rgba(255, 100, 100, 0.3);
+}
+
+.status-deleted {
+    background: rgba(150, 150, 150, 0.15);
+    color: #969696;
+    border: 1px solid rgba(150, 150, 150, 0.3);
+}
+
+.current-user-badge {
+    font-size: 0.75rem;
+    color: var(--accent-secondary);
+    margin-left: 0.5rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
 @media (max-width: 1200px) {
     .users-metrics-row {
         grid-template-columns: repeat(2, 1fr);
